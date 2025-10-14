@@ -1,1 +1,311 @@
-
+{
+  "name": "Automate Caption Gemini",
+  "nodes": [
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Google Drive Download').item.json.id }}?alt=media ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        340,
+        100
+      ],
+      "id": "0123410e-009e-474e-9909-77c6ab37c6b7",
+      "name": "get image",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "PLACEHOLDER_OAUTH2_CREDENTIAL_ID",
+          "name": "oauth google dirve"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/v22.0/ใช้ ID เพจของเรา/photos",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "PLACEHOLDER_FACEBOOK_ACCESS_TOKEN"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        540,
+        100
+      ],
+      "id": "fef77d50-1b81-48ea-ab0f-40f94fece637",
+      "name": "post to facebook"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -80,
+        -120
+      ],
+      "id": "59f7f2b3-952f-4f73-b876-4b09c20256dc",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      query: {\n        startDate: new Date().toISOString().slice(0, 10)\n      }\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        -120
+      ],
+      "id": "489bd8c1-bdc2-4305-8d66-8c8e9e6171be",
+      "name": "Set date"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "=modifiedTime > '{{ $json.query.startDate }}' and trashed = false and mimeType contains 'image/'\n",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1U_q2egTzc3eqgXcdxBln20DmH3qJLTrW",
+            "mode": "list",
+            "cachedResultName": "n8n_upload",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1U_q2egTzc3eqgXcdxBln20DmH3qJLTrW"
+          },
+          "includeTrashed": false
+        },
+        "options": {
+          "fields": [
+            "permissions",
+            "name",
+            "id",
+            "webViewLink"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        340,
+        -120
+      ],
+      "id": "f5dff71e-2614-42cf-87cb-28b820aad4fa",
+      "name": "Google Drive search",
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "PLACEHOLDER_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        540,
+        -120
+      ],
+      "id": "604acba3-f3bd-4a2a-a41c-508038079cab",
+      "name": "Google Drive Download",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "PLACEHOLDER_GOOGLE_DRIVE_CREDENTIAL_ID",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "PLACEHOLDER_GEMINI_API_KEY"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"ช่วยเขียนแคปชั่นเท่ๆ สำหรับโพสต์ขายสินค้าแฟชั่น บน Facebook พร้อมแฮชแท็ก โดยขอแค่ 1 คำตอบเท่านั้น\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $json.data }}\"\n          }\n        }\n      ]\n    }\n  ]\n}\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        160,
+        100
+      ],
+      "id": "1da435e5-8e11-4237-8d12-d20ec2649ea5",
+      "name": "gemini image to Fabric type"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        100
+      ],
+      "id": "67d95cc4-b43f-4937-b0b3-72dca5352a09",
+      "name": "Extract from File"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "get image": {
+      "main": [
+        [
+          {
+            "node": "post to facebook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "post to facebook": {
+      "main": [
+        []
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set date",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set date": {
+      "main": [
+        [
+          {
+            "node": "Google Drive search",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive search": {
+      "main": [
+        [
+          {
+            "node": "Google Drive Download",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive Download": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini image to Fabric type": {
+      "main": [
+        [
+          {
+            "node": "get image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "gemini image to Fabric type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "2b9d3d4f-2c28-4633-be17-a689c44cb957",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0fdbd353b3d60f56600de4b356895824c257be7a727c065cd1e7a122c4e9aff"
+  },
+  "id": "dSde3viBqqo66pp7",
+  "tags": []
+}
