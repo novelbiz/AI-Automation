@@ -3,7 +3,8 @@
 > Workflow ตัวอย่าง: **ดึงข้อมูลจากเว็บไซต์ → ประมวลผลด้วย AI → โพสต์ลง WordPress อัตโนมัติ**  
 > ใช้ n8n + Google Gemini / AI Agent เพื่อสร้างบทความในรูปแบบ HTML ที่พร้อมโพสต์ทันที
 
-🎥 วิดีโอสอน: [EP03 n8n WebScraping to WordPress](https://www.youtube.com/watch?v=M_UnuPLWCfk)
+🎥 วิดีโอสอน: 
+[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/episodes/EP03_n8n_WebScraping_to_WordPress/Image/maxresdefault.jpg)](https://youtu.be/M_UnuPLWCfk?si=KRQZAnu7gkZ5E_x6)
 
 ---
 
