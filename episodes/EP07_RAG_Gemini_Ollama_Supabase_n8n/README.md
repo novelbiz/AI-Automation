@@ -1,5 +1,5 @@
 
-# 🧠 RAG Gemini + Ollama + Supabase Vector Workflow (n8n)
+#  RAG 🧠 Gemini + Ollama + Supabase Vector Workflow (n8n)
 
 Workflow นี้ออกแบบเพื่อกระบวนการ **RAG (Retrieval-Augmented Generation)** ด้วยการนำเอกสารจาก Google Drive มาประมวลผล, สร้าง Metadata, แบ่งเป็น Chunks, ฝังด้วย **Ollama**, จัดเก็บลง **Supabase Vector Store**, และตั้งค่า Agent สำหรับตอบคำถามผ่าน **Google Gemini** + **Ollama** โดยรองรับ LINE Messaging API
 
@@ -21,8 +21,6 @@ Workflow นี้ออกแบบเพื่อกระบวนการ *
 | LINE Messaging API | Access Token | `PLACEHOLDER_LINE_ACCESS_TOKEN` |
 
 ---
-
-## 🚀 Node Workflow รายละเอียดสมบูรณ์
 
 ### #Node: Document Data
 ```json
