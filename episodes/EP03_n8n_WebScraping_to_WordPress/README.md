@@ -4,7 +4,7 @@
 > ใช้ n8n + Google Gemini / AI Agent เพื่อสร้างบทความในรูปแบบ HTML ที่พร้อมโพสต์ทันที
 
 🎥 วิดีโอสอน: 
-[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/episodes/EP03_n8n_WebScraping_to_WordPress/Image/maxresdefault.jpg)](https://youtu.be/M_UnuPLWCfk?si=KRQZAnu7gkZ5E_x6)
+[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/episodes/EP03_n8n_WebScraping_to_WordPress/Image/Screenshot-2025-06-30-120825.png)](https://youtu.be/M_UnuPLWCfk?si=KRQZAnu7gkZ5E_x6)
 
 ---
 
