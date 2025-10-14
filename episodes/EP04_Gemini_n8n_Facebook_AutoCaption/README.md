@@ -7,7 +7,7 @@
 ---
 
 🎥 วิดีโอสอน: 
-[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/episodes/EP04_Gemini_n8n_Facebook_AutoCaption/Image/ep4.jpg)](https://youtu.be/_ABQDSUSWMg?si=iIOkcYPG9eLe0mNR)
+[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/episodes/EP04_Gemini_n8n_Facebook_AutoCaption/Image/Automate%20Caption%20Gemini.png)](https://youtu.be/_ABQDSUSWMg?si=iIOkcYPG9eLe0mNR)
 
 ---
 ## ✨ คุณสมบัติหลัก
