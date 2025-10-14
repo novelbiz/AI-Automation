@@ -85,7 +85,5 @@
 
 คุณได้เรียนรู้วิธีการตั้งค่า OAuth 2.0 สำหรับ YouTube API ใน n8n อย่างละเอียดแล้วครับ!
 
----
 
-**วีดีโอประกอบ:** [คู่มือ OAuth 2.0 สำหรับ YouTube API ใน n8n](https://youtu.be/p6I5f5g6BBk?si=FZvicDZDshgU2u_N)
 
