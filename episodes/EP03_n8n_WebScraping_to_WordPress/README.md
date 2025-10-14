@@ -125,7 +125,6 @@ POST https://www.example.com/wp-json/wp/v2/posts/{{ $json.id }}
 
 - Workflow นี้ **ไม่มี API key หรือ credential id** ถูกลบออกแล้วเพื่อความปลอดภัย  
 - ต้องเพิ่ม credential ใหม่ใน n8n ก่อนใช้งานจริง  
-- ห้ามเผยแพร่ API key หรือ password บน GitHub หรือสาธารณะ  
 
 ---
 
