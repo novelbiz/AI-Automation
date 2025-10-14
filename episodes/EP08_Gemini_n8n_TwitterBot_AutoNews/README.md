@@ -10,21 +10,6 @@
 
 ---
 
-## ขั้นตอนการตั้งค่า Node
-
-   * Schedule Trigger (ตั้งเวลาการทำงาน)
-   * Edit Fields (กำหนด URL เว็บไซต์)
-   * HTTP Request (ดึง HTML)
-   * HTML (แยกข้อมูล: รูปภาพและหัวข้อข่าว)
-   * Aggregate (รวมข้อมูล)
-   * Google Gemini Chat Model (ตั้งค่า Credential)
-   * Basic LLM Chain (สร้าง Prompt สรุปข่าว)
-   * HTTP Request1 (ดึงรูปภาพ)
-   * Edit Image (ปรับขนาดรูปภาพ)
-   * HTTP Request2 (อัปโหลด Media ไปยัง Twitter/X)
-   * Code (ทำความสะอาดข้อความ)
-   * X (โพสต์ Tweet/X)
-
 ## 1. ภาพรวม Workflow
 
 Workflow จะดำเนินการตามลำดับดังนี้:
