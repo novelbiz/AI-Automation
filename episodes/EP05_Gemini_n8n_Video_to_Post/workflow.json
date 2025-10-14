@@ -1,1 +1,699 @@
-
+{
+  "name": "upvideo to facebook youtube",
+  "nodes": [
+    {
+      "parameters": {
+        "fileName": "=/tmp/frame_{{ $now.toString().slice(0, 10)}}.png",
+        "options": {
+          "append": false
+        }
+      },
+      "id": "4ce48f2a-7228-4a18-a046-7909abd1da05",
+      "name": "Write Video to Disk",
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -768,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "command": "=ffmpeg -y -i \"{{ $json['fileName'] }}\" -vf \"select=eq(n\\,10)\" -vframes 1 \"{{ $json.frameImageName }}\"\n\n"
+      },
+      "id": "56fba10b-d98a-4e79-bb5c-8094f32087b3",
+      "name": "Extract Frame (FFmpeg)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $('Code').item.json.frameImageName }}"
+      },
+      "id": "9f5eb5a1-e26c-43fa-a93f-62af5939a692",
+      "name": "Read Image",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -144,
+        -64
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "f6afef42-19bf-49cc-ab18-687f798822d6",
+      "name": "Return Image",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        48,
+        -64
+      ]
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        -64
+      ],
+      "id": "724d73df-8447-4e54-9e8e-a24fd2895261",
+      "name": "When clicking ‘Test workflow’"
+    },
+    {
+      "parameters": {
+        "jsCode": "return [\n  {\n    json: {\n      fileName: $json[\"fileName\"],\n      frameImageName: (() => {\n        const now = new Date();\n        const datePart = now.toISOString().slice(0, 10);\n        return `D:/tmp/frame_${datePart}.png`;\n      })(),\n    },\n  },\n];\n\n\n\n\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        -64
+      ],
+      "id": "db898732-c8d3-43c3-abda-8c3170e3cf66",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "searchMethod": "query",
+        "queryString": "mimeType contains 'video/'",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1U_q2egTzc3eqgXcdxBln20DmH3qJLTrW",
+            "mode": "list",
+            "cachedResultName": "n8n_upload",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1U_q2egTzc3eqgXcdxBln20DmH3qJLTrW"
+          }
+        },
+        "options": {
+          "fields": [
+            "id",
+            "permissions",
+            "webViewLink",
+            "name",
+            "mimeType"
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1152,
+        -64
+      ],
+      "id": "921a62eb-8e1b-4959-a816-2a83afdb2451",
+      "name": "Google Drive",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL_ID_1",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -976,
+        -64
+      ],
+      "id": "36791aae-88bb-4a81-94cd-72e015d0919f",
+      "name": "Google Drive1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL_ID_1",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "setAllData": false,
+        "options": {
+          "encoding": "utf8",
+          "keepAsBase64": true
+        }
+      },
+      "name": "Move Binary Data",
+      "type": "n8n-nodes-base.moveBinaryData",
+      "typeVersion": 1,
+      "position": [
+        -1344,
+        192
+      ],
+      "id": "aba0b50d-bbae-492d-bcc5-aab70835eeb7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent?",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "GEMINI_API_KEY_PLACEHOLDER"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"ช่วยเขียนหัวข้อ สำหรับโพสต์บน Facebook และ Youtube โดยขอแค่ 1 คำตอบเท่านั้น\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $json.data }}\"\n          }\n        }\n      ]\n    }\n  ]\n}\n ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1120,
+        192
+      ],
+      "id": "c9ddb7b2-b0ea-4888-92b6-ad87c16e0220",
+      "name": "gemini image to caption"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/youtube/v3/videos?uploadType=resumable&part=snippet,status",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Upload-Content-Type",
+              "value": "video/mp4"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"snippet\": {\n    \"title\": \"{{ $json.output.snippet.title }}\",\n    \"description\": \"{{ $json.output.snippet.description.replace(/\\r?\\n/g, ' ') }}\",\n    \"categoryId\": \"22\"\n  },\n  \"status\": {\n    \"privacyStatus\": \"unlisted\"\n  }\n}\n",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -608,
+        192
+      ],
+      "id": "1f3d576b-035d-4d67-8a98-af8559c6eb5d",
+      "name": "up conten to you tube",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUTUBE_OAUTH2_CREDENTIAL_ID_1",
+          "name": "Access Youtube"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Create a YouTube video title, description, and tags for a video about '{{ $json.candidates[0].content.parts[0].text }}'. Format the output in JSON with fields: title, description, and tags (as an array). All tags must start with a '#' symbol. Use Thai language. Friendly and motivational tone. ",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.9,
+      "position": [
+        -912,
+        192
+      ],
+      "id": "aa19ebd4-c0aa-4e1e-8088-f0aff43ebe24",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash-lite-preview-02-05",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -960,
+        544
+      ],
+      "id": "845bb60d-fd6d-4f12-ab54-616afa0c9854",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "GOOGLE_GEMINI_API_CREDENTIAL_ID_1",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsonSchemaExample": "{\n  \"snippet\": {\n    \"title\": \"\",\n    \"description\": \"\",\n    \"tags\": [\"\"],\n    \"categoryId\": \"22\"\n  },\n  \"status\": {\n    \"privacyStatus\": \"unlisted\"\n  }\n}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -768,
+        544
+      ],
+      "id": "227fffa4-cde9-45dc-af30-b0fa90ee74d3",
+      "name": "Structured Output Parser"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId={{ $('upload-video-to-you-tube1').item.json.id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        96,
+        528
+      ],
+      "id": "122e6a42-2d01-4791-bcf5-dda6c7c05df0",
+      "name": "up-image-thumbnails-to-you-tube",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUTUBE_OAUTH2_CREDENTIAL_ID_1",
+          "name": "Access Youtube"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PUT",
+        "url": "={{ $json.headers.location }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth2Api",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -592,
+        528
+      ],
+      "id": "af556538-b911-4325-8ad2-0cf5b302e9dc",
+      "name": "upload-video-to-you-tube1",
+      "credentials": {
+        "oAuth2Api": {
+          "id": "YOUTUBE_OAUTH2_CREDENTIAL_ID_1",
+          "name": "Access Youtube"
+        },
+        "youTubeOAuth2Api": {
+          "id": "YOUTUBE_OAUTH2_CREDENTIAL_ID_2",
+          "name": "YouTube account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Google Drive').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1264,
+        32
+      ],
+      "id": "bee8f0ee-4083-46de-ae23-0e608ebf8995",
+      "name": "Google Drive2",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL_ID_1",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "filePath": "={{ $('Code').item.json.frameImageName }}"
+      },
+      "id": "6b4731f2-b869-4c13-979d-e32edfb668ed",
+      "name": "Read Image1",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -368,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "808b41ac-00b3-4ec4-8ce4-9f7ebc6cf854",
+      "name": "Return Image1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        -112,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "hostUrl": "=graph-video.facebook.com",
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "me",
+        "edge": "videos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "file:data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "description",
+                "value": "={{ $('AI Agent').item.json.output.snippet.description }}"
+              },
+              {
+                "name": "published",
+                "value": "true"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [
+        -128,
+        192
+      ],
+      "id": "f8060fca-1cfc-4fae-8cbe-488f70992818",
+      "name": "Facebook Graph API",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "FACEBOOK_GRAPH_API_CREDENTIAL_ID_1",
+          "name": "Facebook Graph account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Google Drive').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -368,
+        192
+      ],
+      "id": "cef6df2a-72fc-4057-b251-8e09ecb53824",
+      "name": "Google Drive3",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "GOOGLE_DRIVE_CREDENTIAL_ID_1",
+          "name": "Google Drive account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Write Video to Disk": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Frame (FFmpeg)": {
+      "main": [
+        [
+          {
+            "node": "Read Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Image": {
+      "main": [
+        [
+          {
+            "node": "Return Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Test workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Extract Frame (FFmpeg)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Google Drive1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive1": {
+      "main": [
+        [
+          {
+            "node": "Write Video to Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Image": {
+      "main": [
+        [
+          {
+            "node": "Move Binary Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Move Binary Data": {
+      "main": [
+        [
+          {
+            "node": "gemini image to caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini image to caption": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Structured Output Parser": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "up conten to you tube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "up conten to you tube": {
+      "main": [
+        [
+          {
+            "node": "Google Drive3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "upload-video-to-you-tube1": {
+      "main": [
+        [
+          {
+            "node": "Read Image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive2": {
+      "main": [
+        []
+      ]
+    },
+    "Read Image1": {
+      "main": [
+        [
+          {
+            "node": "Return Image1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return Image1": {
+      "main": [
+        [
+          {
+            "node": "up-image-thumbnails-to-you-tube",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive3": {
+      "main": [
+        [
+          {
+            "node": "Facebook Graph API",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "upload-video-to-you-tube1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "f2095d42-1089-4e34-89d1-7bc080a0809f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0fdbd353b3d60f56600de4b356895824c257be7a727c065cd1e7a122c4e9aff"
+  },
+  "id": "q5ytaJjnOdjfpkLi",
+  "tags": []
+}
