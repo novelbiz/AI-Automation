@@ -154,22 +154,6 @@ Create a YouTube video title, description, and tags for a video about '{{ $json.
 
 ---
 
-## 🗂️ Node Configuration Cheat Sheet
-
-| Node                                  | Type                  | Input                          | Output                              | Credential                            | Key Parameters                                                                                                                    |
-| ------------------------------------- | --------------------- | ------------------------------ | ----------------------------------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Google Drive (Search & Download)      | Google Drive          | Folder ID / Query              | File Binary                         | Google Drive OAuth2 / Service Account | Query: `mimeType contains 'video/' and modifiedTime > '{{ $json.query.startDate }}'`, Limit: 1, Download file ✅                   |
-| Code (Generate Paths)                 | Function              | File Name                      | JSON with fileName & frameImageName | -                                     | JS code to generate temp paths for thumbnail                                                                                      |
-| Extract Frame                         | Execute Command       | fileName & frameImageName      | Frame Image                         | -                                     | Command: `ffmpeg -y -i "{{ $json.fileName }}" -vf "select=eq(n\,10)" -vframes 1 "{{ $json.frameImageName }}"`                     |
-| Gemini Image to Caption               | HTTP Request          | Frame Image (Binary)           | Short Caption Text                  | Gemini API Key                        | Method: POST, URL, JSON Body with inline image data                                                                               |
-| AI Agent (Metadata Generation)        | AI / OpenAI           | Short Caption                  | JSON with Title/Description/Tags    | -                                     | Prompt with `{{ $json.candidates[0].content.parts[0].text }}`                                                                     |
-| Structured Output Parser              | Function / JSON Parse | AI Agent Output                | JSON ready for YouTube/Facebook     | -                                     | Schema: snippet {title, description, tags, categoryId}, status {privacyStatus}                                                    |
-| Upload Content to YouTube (Metadata)  | HTTP Request          | Structured JSON                | location Header                     | YouTube OAuth2                        | POST URL for resumable upload, snippet & status JSON body                                                                         |
-| Upload Video to YouTube (Actual File) | HTTP Request          | location header & Video Binary | Video ID                            | YouTube OAuth2                        | Method: PUT, URL = location header, Content-Type: video/*                                                                         |
-| Facebook Graph API                    | HTTP Request          | Video Binary                   | Post ID                             | Facebook Access Token                 | POST to `graph-video.facebook.com/videos`, Query: description & published                                                         |
-| Upload Thumbnails to YouTube          | HTTP Request          | Frame Image (Binary)           | Thumbnail Success                   | YouTube OAuth2                        | POST URL: `https://www.googleapis.com/upload/youtube/v3/thumbnails/set?videoId={{ $('upload-video-to-you-tube1').item.json.id }}` |
-
----
 ## 💡 Tips & Best Practices
 
 * ตรวจสอบว่า API Key และ Token ถูกต้องก่อนรัน workflow
