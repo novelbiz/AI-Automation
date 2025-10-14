@@ -1,1 +1,387 @@
-
+{
+  "name": "Gemini_n8n_TwitterBot_AutoNews",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -576,
+        -288
+      ],
+      "id": "ae5fec82-15ca-430a-b422-5d16713e55fd",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "69b55a03-7892-48e2-ae84-ee2f19ab6e00",
+              "name": "url",
+              "value": "https://www.artificialintelligence-news.com/",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -400,
+        -288
+      ],
+      "id": "5a8e4a90-ec68-4baf-9182-23d2bb82d721",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -192,
+        -288
+      ],
+      "id": "d2e0d1ef-a046-45b0-91aa-3f4caa37ecd6",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "extractHtmlContent",
+        "extractionValues": {
+          "values": [
+            {
+              "key": "image",
+              "cssSelector": "div img",
+              "returnValue": "attribute",
+              "attribute": "src",
+              "returnArray": true
+            },
+            {
+              "key": "post",
+              "cssSelector": "h1 a",
+              "returnArray": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        -288
+      ],
+      "id": "ce00d169-40e1-48e9-879f-534712992156",
+      "name": "HTML"
+    },
+    {
+      "parameters": {
+        "fieldsToAggregate": {
+          "fieldToAggregate": [
+            {
+              "fieldToAggregate": "post[0]"
+            },
+            {
+              "fieldToAggregate": "image[2]"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        240,
+        -288
+      ],
+      "id": "640f34f1-78af-4d63-8f28-18a828344f78",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=เขียนบทความใหม่เกี่ยวกับ {{ $json.post[0] }} ไม่เกิน 200 ตัวอักษร โพสต์ลง twitter\n\nข้อกำหนดสำคัญ:\nห้ามคัดลอกหัวข้อข่าวมาโดยตรง ต้องเขียนใหม่\nต้องเขียนให้เหมาะกับแนวทางของแต่ละ Platform\nโพสต์ต้องมีอารมณ์เชิงบวก หรือเป็นกลางเสมอ",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -528,
+        16
+      ],
+      "id": "9608c827-1709-48b0-b99e-57427a1aeff3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.0-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -592,
+        256
+      ],
+      "id": "cb3f667b-6d7a-4e9a-80f9-4fa9db15dc6d",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "PLACEHOLDER_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $('Aggregate').item.json.image[2][0] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -192,
+        16
+      ],
+      "id": "b862ceaf-ef9c-4a3b-8c12-5353eb1479aa",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "operation": "resize",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.editImage",
+      "typeVersion": 1,
+      "position": [
+        32,
+        16
+      ],
+      "id": "6e5003c5-c919-440b-8fc4-972a93b7356f",
+      "name": "Edit Image"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://upload.twitter.com/1.1/media/upload.json",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "oAuth1Api",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "parameterType": "formBinaryData",
+              "name": "media",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        16
+      ],
+      "id": "b85504aa-41f8-4618-ac8f-e82e10e04c4f",
+      "name": "HTTP Request2",
+      "credentials": {
+        "oAuth1Api": {
+          "id": "PLACEHOLDER_TWITTER_OAUTH1_CREDENTIAL_ID",
+          "name": "Twiter"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const output = $('Basic LLM Chain').first().json.text || \"\";\n  const cleanedOutput = output\n    .replace(/\\n/g, \"\")     // ลบ \\n ทั้งหมด\n    .replace(/\\#/g, \"\") \n    .replace(/\\*/g, \"\");    // ลบ * ทั้งหมด\n\n  return {\n    json: {\n      ...item.json,\n      output: cleanedOutput\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        240
+      ],
+      "id": "4e29c78a-64e8-45f4-b0fd-24c11f8670f0",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "text": "={{ $json.output }}",
+        "additionalFields": {
+          "attachments": "={{ $json.media_id_string }}"
+        }
+      },
+      "type": "n8n-nodes-base.twitter",
+      "typeVersion": 2,
+      "position": [
+        32,
+        240
+      ],
+      "id": "90b21b71-1746-4c24-812d-0caf6d98fcc8",
+      "name": "X",
+      "credentials": {
+        "twitterOAuth2Api": {
+          "id": "PLACEHOLDER_TWITTER_OAUTH2_CREDENTIAL_ID",
+          "name": "X account 2"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTML": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Edit Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Image": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "X",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "cf9c6b0d-240c-48c5-b8ed-8261e28b6049",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0fdbd353b3d60f56600de4b356895824c257be7a727c065cd1e7a122c4e9aff"
+  },
+  "id": "5YdqN7TgqLsjI36y",
+  "tags": []
+}
