@@ -102,12 +102,7 @@ Body (JSON):
 - [Twitter API v2 Docs](https://developer.twitter.com/en/docs/twitter-api)
 - [n8n HTTP Request Docs](https://docs.n8n.io/integrations/builtin/core-nodes/n8n-nodes-base.httprequest/)
 
----
 
-## 🎬 แนะนำวิดีโอสอน (YouTube)
-[สอน Authen Twitter API ใน n8n ใช้ API KEY ทำ Automation ได้เลย!](https://youtu.be/7xsseqN_Vn8?si=2R3oCIR4la3m71d0)
-
----
 
 > จัดทำโดย: **NOVELBIZ Automation Lab**  
 > อัปเดตล่าสุด: 15 ตุลาคม 2025
