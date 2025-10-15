@@ -5,7 +5,7 @@
 
 ---
 
-🎥 วิดีโอสอน: 
+🎥 วิดีโอ: 
 [![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/assets/thumbnail/novelbiz.jpg)](http://www.youtube.com/watch?v=a84K0mEzcjc)
 
 ---
