@@ -1,1 +1,224 @@
-
+{
+  "name": "line chat bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "8ca874e4-80b3-403d-875a-7065ebfda19f",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -576,
+        0
+      ],
+      "id": "16c44a2f-f1c7-4af6-b9d3-b53f24fb1836",
+      "name": "Webhook",
+      "webhookId": "8ca874e4-80b3-403d-875a-7065ebfda19f"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8ab502eb-9692-43e4-8740-ca47e202fbf1",
+              "name": "body.events[0].message.text",
+              "value": "={{ $json.body.events[0].message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "39c38d95-41e9-4e0b-8873-febe6703371e",
+              "name": "body.events[0].replyToken",
+              "value": "={{ $json.body.events[0].replyToken }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -368,
+        0
+      ],
+      "id": "029547a1-4c98-406f-9878-6d33d33fbb7c",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=นี่คือข้อความที่ผู้ใช้ส่งมาใน LINE: \"{{ $json.body.events[0].message.text }}\"\nโปรดตอบกลับด้วยภาษาที่สุภาพ เป็นกันเอง และอ่านง่าย\nใช้ภาษาธรรมชาติ และสามารถใส่อีโมจิได้ถ้าเหมาะสม\nตอบให้ตรงประเด็น เข้าใจง่าย และเป็นมิตร\n",
+        "options": {
+          "systemMessage": "คุณเป็นผู้ช่วยอัจฉริยะสำหรับการสนทนาใน LINE  \nสามารถตอบคำถามได้ทุกเรื่อง ทั้งข้อมูลทั่วไป ความรู้ บทสนทนา หรือช่วยแก้ปัญหา  \nให้ตอบด้วยภาษาที่สุภาพ เป็นกันเอง และเข้าใจง่าย  \nสามารถใส่อีโมจิได้ถ้าเหมาะสม  \nห้ามใส่อักขระพิเศษ เช่น \\n, \\r, \\, หรือเครื่องหมายที่ไม่จำเป็นในข้อความตอบกลับ  \nถ้าข้อความจากผู้ใช้ไม่ชัดเจน ให้ถามย้อนเพื่อขอข้อมูลเพิ่ม  \nหลีกเลี่ยงการใช้ภาษาที่ไม่เหมาะสมหรือสร้างความขัดแย้ง\n\n\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        -144,
+        0
+      ],
+      "id": "792b7d58-d697-456e-aa92-3dac4f158807",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -224,
+        224
+      ],
+      "id": "5b0281ed-a431-4a2c-8c25-97fa458b939e",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "**[CREDENTIAL_ID_PLACEHOLDER]**",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับข้อมูลจาก Node ก่อนหน้า (string หรือ object)\nlet rawData = $input.first().json.output ?? $input.first().json;\n\n// แปลงเป็น string ถ้ายังไม่ใช่\nif (typeof rawData !== 'string') {\n  rawData = JSON.stringify(rawData);\n}\n\n// ลบ \\n, \\r, และเครื่องหมาย / ที่อยู่นอก JSON\nrawData = rawData.replace(/\\r?\\n|\\r/g, '').replace(/\\//g, '');\n\n// ดึงเฉพาะส่วนที่เป็น JSON {...}\nconst match = rawData.match(/\\{[\\s\\S]*\\}/);\n\nif (match) {\n  try {\n    const cleanJson = JSON.parse(match[0]);\n    return [{ json: cleanJson }];\n  } catch (err) {\n    return [{ json: { error: 'Invalid JSON after cleaning', raw: match[0] } }];\n  }\n} else {\n  return [{ json: { error: 'No JSON found in input', raw: rawData } }];\n}\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        224,
+        0
+      ],
+      "id": "76da3add-0203-4dce-9fff-b86faaf3edce",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "=return [{ json: { sessionKey: $crypto.randomBytes(16).toString('hex') } }];\n"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -48,
+        240
+      ],
+      "id": "56af8818-c517-42a3-9fe5-b83f3726ab57",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/reply",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer **[LINE_CHANNEL_ACCESS_TOKEN_PLACEHOLDER]**"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"replyToken\": \"{{ $('Edit Fields').item.json.body.events[0].replyToken }}\",\n  \"messages\": [\n    {\n      \"type\": \"text\",\n      \"text\": \"{{ $json.raw }}\"\n    }\n  ]\n}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "c86c92a4-7799-4687-a826-8e4070ff847b",
+      "name": "reply to line"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "reply to line",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "48ef8008-0c8c-46d0-b129-4ef93b1ce12e",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0fdbd353b3d60f56600de4b356895824c257be7a727c065cd1e7a122c4e9aff"
+  },
+  "id": "GlpUW2AVpGDy4aWK",
+  "tags": []
+}
