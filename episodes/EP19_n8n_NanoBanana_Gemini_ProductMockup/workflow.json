@@ -1,1 +1,557 @@
-
+{
+  "name": "Generate Product Mockups with Nano Banana",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "Nano Banana",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Upload  shirt",
+              "fieldType": "file",
+              "acceptFileTypes": ".jpg, .png, .jpeg",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Upload  shoe",
+              "fieldType": "file",
+              "acceptFileTypes": ".jpg, .png, .jpeg",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Upload model",
+              "fieldType": "file",
+              "acceptFileTypes": ".jpg, .png, .jpeg",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.3,
+      "position": [
+        -448,
+        -496
+      ],
+      "id": "5ef4b237-8935-4429-a51c-ec6527cd48a2",
+      "name": "On form submission",
+      "webhookId": "b5db181f-f927-4239-8b54-a73820b21588"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Upload__shirt",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -256,
+        -496
+      ],
+      "id": "0e3a37e9-f274-45f3-96d9-596ac02a641b",
+      "name": "Upload__shirt"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Upload__shoe",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -64,
+        -496
+      ],
+      "id": "0e18b051-b9c8-456b-8ba6-199b4dd06b2c",
+      "name": "Upload__shoe"
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "binaryPropertyName": "Upload_model",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        96,
+        -496
+      ],
+      "id": "1258d850-ad96-46e9-87c0-29ff65c9adac",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "**[GEMINI_API_KEY_PLACEHOLDER]**"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"ช่วยเขียน prompt สร้างภาพ คุณจะเห็นสามภาพ ภาพแรกเป็นคน ภาพที่สองเป็นเสื้อ ภาพที่สามเป็นรองเท้า ให้วิเคราะห์แล้วสร้างภาพที่คนในภาพสวมเสื้อนี้ และรองเท้า เสื้อควรพอดีกับลำตัวและไหล่ มีรอยพับและเงาที่เป็นธรรมชาติ โลโก้หรือรายละเอียดบนเสื้อต้องชัดเจน ให้สไตล์ภาพสมจริงและสวยงาม แสงและเงาให้ถูกต้อง ใส่พื้นหลังตามสไตล์ของเสื้อ เหมาะสำหรับใช้ในร้านค้าออนไลน์ ตอบเป็นข้อความธรรมดา  ห้ามมี: อักษรพิเศษ อธิบายแบบละเอียดว่าผลลัพธ์เป็นอย่างไร ขึ้นต้นด้วย สร้างภาพ\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $('Upload__shirt').item.json.data }}\"\n          }\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $('Upload__shoe').item.json.data }}\"\n          }\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $json.data }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        256,
+        -496
+      ],
+      "id": "894d0d4d-36fe-4277-a728-ad039bbb9d2c",
+      "name": "gemini image to Fabric type"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "9eb38cdd-d576-4a04-bc8f-cf66e5f38652",
+              "name": "prompt",
+              "value": "={{ $json.prompt }}",
+              "type": "string"
+            },
+            {
+              "id": "211c2be0-eb63-4829-8da7-efcf268b74b7",
+              "name": "Extract from File",
+              "value": "={{ $('Extract from File').item.json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "f465ce3f-0c6e-47a7-923a-c54ce1f4d4a0",
+              "name": "Upload__shoe",
+              "value": "={{ $('Upload__shoe').item.json.data }}",
+              "type": "string"
+            },
+            {
+              "id": "d5c6652f-e9ef-438b-b5fd-85b37505a162",
+              "name": " Upload__shirt",
+              "value": "={{ $('Upload__shirt').item.json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        640,
+        -496
+      ],
+      "id": "a8c896bd-f2e5-435e-84fc-16633637693e",
+      "name": "Assemble Final Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openRouterApi",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"google/gemini-2.5-flash-image-preview:generateContent\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"{{ $('Code').item.json.prompt }}\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:image/jpeg;base64,{{ $json['Extract from File'] }}\"\n          }\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:image/jpeg;base64,{{ $json.Upload__shoe }}\"\n          }\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"data:image/jpeg;base64,{{ $json[' Upload__shirt'] }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -208,
+        -272
+      ],
+      "id": "a52dbd5a-5d3d-4758-859e-4b218c918058",
+      "name": "openrouter",
+      "credentials": {
+        "openRouterApi": {
+          "id": "**[OPENROUTER_CREDENTIAL_ID_PLACEHOLDER]**",
+          "name": "OpenRouter account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "63795c85-270b-48b9-a9b7-15222d35b3b4",
+              "name": "url",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.split(\",\")[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "2b3e0387-1046-41e0-99ec-9e61a8fdb7df",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        144,
+        -288
+      ],
+      "id": "7be590c4-4ac8-471d-b7ba-7369b0eefaba",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "url",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        2352,
+        -224
+      ],
+      "id": "279834e9-f0b4-41b8-aa44-61b543ad1d2b",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp-image-generation:generateContent",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "**[GEMINI_API_KEY_PLACEHOLDER]**"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"ช่วยเขียนแคปชั่นเครื่องดิ่มเท่ๆ สำหรับโพสต์ขายสินค้าแฟชั่น บน Facebook พร้อมแฮชแท็ก โดยขอแค่ 1 คำตอบเท่านั้น\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $json.url }}\"\n          }       \n        }\
+      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        336,
+        -288
+      ],
+      "id": "c4bff592-f56f-4675-99f1-08600ee2bc13",
+      "name": "gemini image to caption",
+      "retryOnFail": false,
+      "executeOnce": false
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://graph.facebook.com/v23.0/127125650484136/photos",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "access_token",
+              "value": "**[FACEBOOK_ACCESS_TOKEN_PLACEHOLDER]**"
+            },
+            {
+              "name": "caption",
+              "value": "={{ $('gemini image to caption').item.json.candidates[0].content.parts[0].text }}"
+            },
+            {
+              "parameterType": "formBinaryData",
+              "name": "image",
+              "inputDataFieldName": "data"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2368,
+        -16
+      ],
+      "id": "b619740a-f659-48af-bda8-0765b1abbc05",
+      "name": "post to facebook"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "5ee59f4e-e029-44e0-92b4-8bb88b6fdb92",
+              "leftValue": "={{ $json.choices[0].message.images[0].image_url.url }}",
+              "rightValue": "={{ null }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -48,
+        -272
+      ],
+      "id": "fa5d0777-30af-4748-b923-34acd8191c55",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับข้อความจาก input\nconst prompt = $input.first().json.candidates[0].content.parts[0].text|| \"\";\n\n// ลบอักขระพิเศษ และ \\n ให้เหลือแต่ ตัวอักษร ตัวเลข และช่องว่าง\nconst cleanPrompt = prompt.replace(/[^a-zA-Z0-9ก-๙\\s]/g, \" \").replace(/\\s+/g, \" \").trim();\n\nreturn [\n  {\n    json: {\n      prompt: cleanPrompt\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        -496
+      ],
+      "id": "8da3cf4f-e94a-4b13-b15f-e72a057d32f3",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "63795c85-270b-48b9-a9b7-15222d35b3b4",
+              "name": "url",
+              "value": "={{ $json.choices[0].message.images[0].image_url.url.split(\",\")[1] }}",
+              "type": "string"
+            },
+            {
+              "id": "2b3e0387-1046-41e0-99ec-9e61a8fdb7df",
+              "name": "",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        512,
+        -288
+      ],
+      "id": "97c69790-04a7-442a-850e-4fe848fd5d3b",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "ulr",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        -288
+      ],
+      "id": "2ed15987-014c-4c9d-ba31-1bfbd2d274a9",
+      "name": "Convert to File1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "On form submission": {
+      "main": [
+        [
+          {
+            "node": "Upload__shirt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload__shirt": {
+      "main": [
+        [
+          {
+            "node": "Upload__shoe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload__shoe": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "gemini image to Fabric type",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini image to Fabric type": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Assemble Final Data": {
+      "main": [
+        [
+          {
+            "node": "openrouter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "openrouter": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "gemini image to caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        []
+      ]
+    },
+    "gemini image to caption": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Upload__shirt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Assemble Final Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "fd089bb2-07d9-4b2e-b4e1-30e55fef7a41",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0fdbd353b3d60f56600de4b356895824c257be7a727c065cd1e7a122c4e9aff"
+  },
+  "id": "s3qHHFzsPkJrTCfG",
+  "tags": []
+}
