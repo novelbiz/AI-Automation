@@ -6,7 +6,7 @@
 ---
 
 🎥 วิดีโอสอน: 
-[![Watch the video](https://i9.ytimg.com/vi/a84K0mEzcjc/maxresdefault.jpg?v=687a3bbd&sqp=CNCouscG&rs=AOn4CLAo0vGEgYWF-tp1UMmLCq8i9z4Lfg)](http://www.youtube.com/watch?v=a84K0mEzcjc)
+[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/assets/thumbnail/novelbiz.jpg)](http://www.youtube.com/watch?v=a84K0mEzcjc)
 
 ---
 
