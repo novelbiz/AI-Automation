@@ -4,6 +4,11 @@
 
 ---
 
+🎥 วิดีโอสอน: 
+[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/assets/thumbnail/Generate%20Product%20Mockups%20with%20Nano%20Banana.png)](https://youtu.be/TC5sTjpcEws?si=LT4NroL6Iwbob2nF)
+
+---
+
 ## 🧩 ภาพรวม (High-level)
 
 | ลำดับ | ขั้นตอน                                          | รายละเอียด                                                                      |
