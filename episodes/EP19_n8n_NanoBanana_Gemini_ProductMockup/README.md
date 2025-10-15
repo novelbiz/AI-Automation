@@ -1,3 +1,5 @@
+https://youtu.be/TC5sTjpcEws?si=-72mE3ax9GKUn3Yv
+
 ---------------//// node : gemini image to Fabric type ////-------------------
 --//url:generative//--
 
