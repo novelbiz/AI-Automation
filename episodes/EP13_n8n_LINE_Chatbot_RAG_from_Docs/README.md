@@ -3,6 +3,11 @@
 
 ---
 
+🎥 วิดีโอสอน: 
+[![Watch the video](https://github.com/novelbiz/AI_Automation/blob/main/assets/thumbnail/RAG%20%2B%20LINE.png)](https://youtu.be/0N3X9lG6n2c?si=Hg9EALEiRzab790s)
+
+---
+
 ## 🧠 หลักการทำงาน (RAG Workflow)
 
 1. รับข้อความจาก LINE ผ่าน Webhook  
