@@ -66,6 +66,7 @@
 - 🌐 [NovelBiz Website](https://www.novelbiz.co.th/)  
 - 📺 [YouTube: NOVELBIZ](https://www.youtube.com/@NOVELBIZ/videos)  
 - 💬 [Facebook: NOVELBIZ ](https://www.facebook.com/NOVELBIZThailand)
+- 🎵 [TikTok: @ntechbkk](https://www.tiktok.com/@ntechbkk)
 
 ---
 
