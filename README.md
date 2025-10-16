@@ -1,4 +1,4 @@
-# AI Automation Series with n8n + Gemini
+# n8n AI Automation Tutorials
 
 **AI Automation Series** คือชุดโปรเจกต์และวิดีโอสอนเชิงปฏิบัติ ที่ออกแบบมาเพื่อให้ทุกคนสามารถสร้างระบบอัตโนมัติ (Automation) และระบบปัญญาประดิษฐ์ (AI) ได้ด้วยตัวเอง โดยใช้เครื่องมือโอเพนซอร์สอย่าง **n8n**, **Gemini API**, และ **Ollama**
 
