@@ -1,0 +1,83 @@
+const data = $input.first().json;
+
+if (!data.topProducts || !data.dailySales || !data.sortedDates || !data.categoryStats) {
+  throw new Error('ข้อมูลไม่ครบ! ตรวจสอบ node "Process Sales Data"');
+}
+
+// --- Top Products Bar Chart ---
+const topProducts = data.topProducts.slice(0,10);
+const barChartConfig = {
+  type: 'bar',
+  data: {
+    labels: topProducts.map(([name]) => name),
+    datasets: [{
+      label: 'ยอดขาย (บาท)',
+      data: topProducts.map(([, stats]) => stats.revenue),
+      backgroundColor: 'rgba(54, 162, 235, 0.8)',
+      borderColor: 'rgba(54, 162, 235, 1)',
+      borderWidth: 2
+    }]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { display: false }, title: { display: true, text: '📊 Top 10 สินค้าขายดี', font:{size:20}, color:'#333' } },
+    layout: { padding: 20 },
+    scales: {
+      y: { beginAtZero: true, ticks:{callback: v=>v.toLocaleString('th-TH')+' ฿'}, grid:{color:'rgba(0,0,0,0.1)'} },
+      x: { ticks:{maxRotation:45,minRotation:45}, grid:{display:false} }
+    }
+  }
+};
+
+// --- Last 14 days Line Chart ---
+const lastDates = data.sortedDates.slice(-14);
+const lastSales = lastDates.map(d => data.dailySales[d] || 0);
+
+const lineChartConfig = {
+  type: 'line',
+  data: { labels:lastDates, datasets:[{
+    label:'ยอดขายรายวัน (บาท)',
+    data:lastSales,
+    fill:true,
+    backgroundColor:'rgba(75,192,192,0.2)',
+    borderColor:'rgba(75,192,192,1)',
+    borderWidth:3,
+    tension:0.4,
+    pointRadius:5,
+    pointBackgroundColor:'rgba(75,192,192,1)',
+    pointBorderColor:'#fff',
+    pointBorderWidth:2,
+    pointHoverRadius:7
+  }]},
+  options:{
+    responsive:true,
+    plugins:{ legend:{display:false}, title:{display:true,text:'📈 แนวโน้มยอดขาย 14 วันล่าสุด', font:{size:20}, color:'#333'}},
+    layout:{padding:20},
+    scales:{ y:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString('th-TH')+' ฿'},grid:{color:'rgba(0,0,0,0.1)'}}, x:{grid:{color:'rgba(0,0,0,0.1)'}} }
+  }
+};
+
+// --- Category Pie Chart ---
+const pieChartLabels = Object.keys(data.categoryStats);
+const pieChartData = Object.values(data.categoryStats);
+const colors = ['rgba(255,99,132,0.8)','rgba(54,162,235,0.8)','rgba(255,206,86,0.8)','rgba(75,192,192,0.8)','rgba(153,102,255,0.8)','rgba(255,159,64,0.8)','rgba(231,233,237,0.8)','rgba(255,99,255,0.8)'];
+
+const pieChartConfig = {
+  type:'pie',
+  data:{labels:pieChartLabels,datasets:[{data:pieChartData, backgroundColor: colors.slice(0,pieChartLabels.length), borderColor:'#fff', borderWidth:2}]},
+  options:{responsive:true,plugins:{legend:{display:true,position:'right'},title:{display:true,text:'🍰 สัดส่วนยอดขายตามหมวดหมู่',font:{size:20},color:'#333'}},layout:{padding:50}}
+};
+
+// --- Generate URLs ---
+const baseUrl = 'https://quickchart.io/chart';
+const width = 800, height = 500;
+
+return [{
+  json:{
+    ...data,
+    barChartUrl: `${baseUrl}?width=${width}&height=${height}&backgroundColor=white&c=${encodeURIComponent(JSON.stringify(barChartConfig))}`,
+    lineChartUrl: `${baseUrl}?width=${width}&height=${height}&backgroundColor=white&c=${encodeURIComponent(JSON.stringify(lineChartConfig))}`,
+    pieChartUrl: `${baseUrl}?width=${width}&height=${height}&backgroundColor=white&c=${encodeURIComponent(JSON.stringify(pieChartConfig))}`,
+    chartGenerated:true
+  }
+}];

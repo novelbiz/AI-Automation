@@ -1,0 +1,413 @@
+// ===================================================
+// LINE Message Formatter พร้อมจัดการข้อความ AI
+// ===================================================
+
+// ===================================================
+// ฟังก์ชันตรวจสอบ URL
+// ===================================================
+function safeUrl(url) {
+  const dummy = "https://dummyimage.com/800x500/cccccc/ffffff&text=No+Chart";
+  if (!url || typeof url !== "string") return dummy;
+  const clean = url.trim();
+  if (!/^https?:\/\//.test(clean)) return dummy;
+  return clean;
+}
+
+// ===================================================
+// ฟังก์ชันจัดการข้อความ AI
+// ===================================================
+function cleanAIText(text) {
+  if (!text || typeof text !== 'string') {
+    return 'ไม่สามารถวิเคราะห์ข้อมูลได้';
+  }
+
+  let cleaned = text;
+
+  // 1. ลบส่วนหัวที่ไม่จำเป็น
+  cleaned = cleaned.replace(/^(ยอดเยี่ยม|แน่นอน)ครับ.*?ในฐานะ(ผู้เชี่ยวชาญ|นักวิเคราะห์).*?ดังนี้ครับ\n+/s, '');
+  
+  // 2. ลบเส้นคั่น (---)
+  cleaned = cleaned.replace(/\n*-{3,}\n*/g, '\n\n');
+  
+  // 3. แปลง Markdown Headers (### ) เป็น emoji + ข้อความ
+  cleaned = cleaned.replace(/###\s*\*{0,2}(.+?)\*{0,2}/g, '📌 $1');
+  
+  // 4. ลบ markdown formatting อื่นๆ
+  cleaned = cleaned.replace(/\*{1,2}(.+?)\*{1,2}/g, '$1'); // **bold** หรือ *italic*
+  cleaned = cleaned.replace(/\*/g, ''); // ลบ * ที่เหลือทั้งหมด
+  cleaned = cleaned.replace(/_{1,2}(.+?)_{1,2}/g, '$1'); // __bold__ หรือ _italic_
+  
+  // 5. แปลง bullet points
+  cleaned = cleaned.replace(/^\* /gm, '• ');
+  cleaned = cleaned.replace(/^- /gm, '• ');
+  
+  // 6. ลบช่องว่างหลาย line ซ้อน
+  cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+  
+  // 7. ตัดช่องว่างหน้า-หลัง
+  cleaned = cleaned.trim();
+  
+  // 8. จำกัดความยาว (LINE Flex Message รองรับได้ประมาณ 3000 ตัวอักษร)
+  // ถ้ายาวเกินไป ตัดให้เหลือ 2500 ตัวอักษร
+  if (cleaned.length > 2500) {
+    cleaned = cleaned.substring(0, 2500) + '...\n\n📊 [ข้อความถูกตัดทอน - ดูรายงานเต็มใน Google Sheets]';
+  }
+  
+  return cleaned;
+}
+
+// ===================================================
+// ฟังก์ชันสกัดข้อมูลสำคัญจาก AI (ทางเลือก - กระชับกว่า)
+// ===================================================
+function extractKeyInsights(text) {
+  if (!text || typeof text !== 'string') {
+    return 'ไม่สามารถวิเคราะห์ข้อมูลได้';
+  }
+
+  const insights = [];
+  
+  // หา Top 3 Products
+  const top3Match = text.match(/🥇\s*\*{0,2}1\.\s*(.+?)\*{0,2}\s*\n.*?รายได้:\*{0,2}\s*([\d,]+)\s*บาท/s);
+  if (top3Match) {
+    insights.push(`🥇 สินค้าขายดีที่สุด: ${top3Match[1]}`);
+    insights.push(`💰 รายได้: ${top3Match[2]} บาท`);
+  }
+  
+  // หาโอกาส
+  const opportunityMatch = text.match(/สินค้าดาวรุ่ง.*?:.*?\*{0,2}(.+?)\*{0,2}:/s);
+  if (opportunityMatch) {
+    insights.push(`\n✨ โอกาส: ${opportunityMatch[1]}`);
+  }
+  
+  // หาคำแนะนำ
+  const recommendMatch = text.match(/ข้อเสนอแนะเชิงกลยุทธ์.*?\n\n(.*?)(?:\n\n\*{0,2}💰|$)/s);
+  if (recommendMatch) {
+    let recommendations = recommendMatch[1];
+    // ตัด numbering และปรับให้กระชับ
+    recommendations = recommendations.replace(/\d+\.\s*\*{0,2}(.+?):\*{0,2}\s*/g, '• $1: ');
+    recommendations = recommendations.replace(/\n/g, ' ').substring(0, 300);
+    insights.push(`\n💡 คำแนะนำ:\n${recommendations}...`);
+  }
+  
+  return insights.join('\n');
+}
+
+// 🧩 ดึงข้อมูลจาก Node ต่าง ๆ
+const aiNode = $input.first().json;
+const chartNode = $('Generate Charts1').first().json;
+const processNode = $('Process Sales Data1').first().json;
+
+// 📊 ข้อมูลหลัก
+const aiRawText = aiNode.text || aiNode.output || 'ไม่สามารถวิเคราะห์ข้อมูลได้';
+const totalRevenue = processNode.totalRevenue || 0;
+const totalQuantity = processNode.totalQuantity || 0;
+const topProducts = processNode.topProducts || [];
+
+// ✅ จัดการข้อความ AI (เลือก 1 ใน 2 วิธี)
+// วิธีที่ 1: ทำความสะอาดข้อความเต็ม (แนะนำ)
+const aiResponse = cleanAIText(aiRawText);
+
+// วิธีที่ 2: สกัดเฉพาะประเด็นสำคัญ (กระชับกว่า)
+// const aiResponse = extractKeyInsights(aiRawText);
+
+// 🔍 Debug: แสดงข้อความ AI ที่ผ่านการจัดการแล้ว
+console.log("🤖 AI Response (cleaned):", aiResponse.substring(0, 200) + "...");
+console.log("📏 Length:", aiResponse.length);
+
+// ✅ ดึง URL จาก Generate Charts1
+const barChartUrl = safeUrl(chartNode.barChartUrl || "https://dummyimage.com/800x500/cccccc/ffffff&text=No+Bar+Chart");
+const lineChartUrl = safeUrl(chartNode.lineChartUrl || "https://dummyimage.com/800x500/cccccc/ffffff&text=No+Line+Chart");
+const pieChartUrl = safeUrl(chartNode.pieChartUrl || "https://dummyimage.com/800x500/cccccc/ffffff&text=No+Pie+Chart");
+
+// 🖼️ URL ของกราฟ (เลือกอันเดียวสำหรับ Flex Message)
+let chartUrl = safeUrl(chartNode.barChartUrl || chartNode.lineChartUrl || chartNode.pieChartUrl);
+
+// 📋 URL สำหรับลิงก์หลัก
+let sheetUrl = safeUrl("https://docs.google.com/spreadsheets/d/1T4TUZWwVJ36RHKG4gHrbaLh6OVSHIGaP9qneuderuT8");
+
+// 📅 วันที่
+const analysisDate = new Date().toLocaleString('th-TH', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+  hour12: false
+});
+
+// ===================================================
+// 💳 1️⃣ Summary Card
+// ===================================================
+const summaryCard = {
+  type: "flex",
+  altText: "📊 รายงานยอดขายประจำวัน",
+  contents: {
+    type: "bubble",
+    size: "mega",
+    hero: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        { 
+          type: "text", 
+          text: "📊 รายงานยอดขาย", 
+          size: "xxl", 
+          weight: "bold", 
+          color: "#FFFFFF", 
+          align: "center" 
+        },
+        { 
+          type: "text", 
+          text: analysisDate, 
+          size: "sm", 
+          color: "#FFFFFF", 
+          align: "center", 
+          margin: "md", 
+          wrap: true 
+        }
+      ],
+      backgroundColor: "#3B82F6",
+      paddingAll: "25px",
+      spacing: "md"
+    },
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { type: "text", text: "💰", size: "xl", flex: 0 },
+            {
+              type: "box",
+              layout: "vertical",
+              contents: [
+                { 
+                  type: "text", 
+                  text: "ยอดขายรวม", 
+                  size: "sm", 
+                  color: "#666666", 
+                  weight: "bold" 
+                },
+                { 
+                  type: "text", 
+                  text: `${totalRevenue.toLocaleString('th-TH')} บาท`, 
+                  size: "xl", 
+                  color: "#10B981", 
+                  weight: "bold", 
+                  margin: "xs" 
+                }
+              ],
+              margin: "md"
+            }
+          ],
+          backgroundColor: "#F0FDF4",
+          cornerRadius: "md",
+          paddingAll: "15px"
+        },
+        {
+          type: "box",
+          layout: "horizontal",
+          contents: [
+            { 
+              type: "text", 
+              text: "📦 จำนวนสินค้า", 
+              size: "md", 
+              color: "#666666", 
+              flex: 0 
+            },
+            { 
+              type: "text", 
+              text: `${totalQuantity.toLocaleString('th-TH')} ชิ้น`, 
+              size: "md", 
+              color: "#3B82F6", 
+              weight: "bold", 
+              align: "end" 
+            }
+          ],
+          margin: "xl",
+          paddingAll: "10px"
+        },
+        { 
+          type: "separator", 
+          margin: "xl", 
+          color: "#E5E7EB" 
+        },
+        { 
+          type: "text", 
+          text: "🏆 Top 3 สินค้าขายดี", 
+          size: "lg", 
+          weight: "bold", 
+          color: "#1F2937", 
+          margin: "xl" 
+        }
+      ],
+      paddingAll: "20px"
+    },
+    footer: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          height: "sm",
+          action: { 
+            type: "uri", 
+            label: "📊 ดูรายงานเต็มใน Google Sheets", 
+            uri: sheetUrl 
+          },
+          color: "#2563EB"
+        },
+        { 
+          type: "text", 
+          text: "ดูกราฟด้านล่าง 👇", 
+          size: "sm", 
+          color: "#6B7280", 
+          align: "center", 
+          weight: "bold", 
+          margin: "md" 
+        }
+      ],
+      paddingAll: "15px",
+      backgroundColor: "#F9FAFB"
+    }
+  }
+};
+
+// เพิ่ม Top 3
+if (topProducts.length > 0) {
+  topProducts.slice(0, 3).forEach((product, index) => {
+    const [name, stats] = product;
+    const medal = ["🥇", "🥈", "🥉"][index] || "⭐";
+    const bgColor = ["#FEF3C7", "#E0E7FF", "#FFEDD5"][index] || "#FFFFFF";
+
+    summaryCard.contents.body.contents.push({
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: medal, size: "xl", flex: 0 },
+        {
+          type: "box",
+          layout: "vertical",
+          contents: [
+            { 
+              type: "text", 
+              text: name, 
+              size: "md", 
+              color: "#1F2937", 
+              weight: "bold", 
+              wrap: true 
+            },
+            { 
+              type: "text", 
+              text: `${stats.quantity} ชิ้น | ${stats.revenue.toLocaleString('th-TH')} บาท`, 
+              size: "sm", 
+              color: "#059669", 
+              margin: "xs", 
+              weight: "bold" 
+            }
+          ],
+          margin: "md"
+        }
+      ],
+      margin: "md",
+      backgroundColor: bgColor,
+      cornerRadius: "md",
+      paddingAll: "12px"
+    });
+  });
+}
+
+// ===================================================
+// 🤖 AI Analysis Bubble
+// ===================================================
+const aiAnalysisBubble = {
+  type: "flex",
+  altText: "🤖 การวิเคราะห์",
+  contents: {
+    type: "bubble",
+    size: "mega",
+    header: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { type: "text", text: "🤖", size: "xl", flex: 0 },
+        { 
+          type: "text", 
+          text: "การวิเคราะห์", 
+          weight: "bold", 
+          size: "lg", 
+          color: "#FFFFFF", 
+          margin: "md" 
+        }
+      ],
+      paddingAll: "20px",
+      backgroundColor: "#8B5CF6"
+    },
+    body: { 
+      type: "box", 
+      layout: "vertical", 
+      contents: [
+        { 
+          type: "text", 
+          text: aiResponse, 
+          wrap: true, 
+          size: "sm", 
+          color: "#1F2937" 
+        }
+      ], 
+      paddingAll: "20px" 
+    },
+    footer: {
+      type: "box",
+      layout: "horizontal",
+      contents: [
+        { 
+          type: "text", 
+          text: "✅ รายงานสมบูรณ์", 
+          size: "sm", 
+          color: "#10B981", 
+          weight: "bold" 
+        },
+        { 
+          type: "text", 
+          text: new Date().toLocaleTimeString('th-TH'), 
+          size: "xs", 
+          color: "#6B7280", 
+          align: "end" 
+        }
+      ],
+      paddingAll: "15px"
+    }
+  }
+};
+
+// ===================================================
+// ✅ ส่งกลับ LINE
+// ===================================================
+return [{
+  json: {
+    to: "U938a9be63e7f733655278aade4600a8a",
+    messages: [
+      summaryCard,
+      { 
+        type: "image", 
+        originalContentUrl: barChartUrl, 
+        previewImageUrl: barChartUrl 
+      },
+      { 
+        type: "image", 
+        originalContentUrl: lineChartUrl, 
+        previewImageUrl: lineChartUrl 
+      },
+      { 
+        type: "image", 
+        originalContentUrl: pieChartUrl, 
+        previewImageUrl: pieChartUrl 
+      },
+      aiAnalysisBubble
+    ]
+  }
+}];

@@ -1,0 +1,78 @@
+// ===================================================
+// Process Sales Data (แก้ไข timestamp อย่างปลอดภัย)
+// ===================================================
+const salesData = [];
+
+for (const item of $input.all()) {
+  const json = item.json;
+
+  if (json['วันที่ขาย'] && json['สินค้า'] && json['ประทับเวลา']) {
+    // แยกวัน เดือน ปี และเวลา
+    const timestampStr = json['ประทับเวลา'].trim(); // "26/10/2025, 21:46:47"
+    const [datePart, timePart] = timestampStr.split(',').map(s => s.trim()); // ["26/10/2025", "21:46:47"]
+    const [day, month, year] = datePart.split('/').map(Number); // [26,10,2025]
+    const [hour, minute, second] = timePart.split(':').map(Number); // [21,46,47]
+
+    // สร้าง Date object อย่างปลอดภัย
+    const isoTimestamp = new Date(year, month - 1, day, hour, minute, second).toISOString();
+
+    salesData.push({
+      date: json['วันที่ขาย'],                 
+      product: json['สินค้า'],
+      quantity: json['จำนวน'] || 0,
+      revenue: json['ยอดขายรวม'] || 0,
+      category: json['หมวดหมู่'] || 'N/A',
+      timestamp: isoTimestamp
+    });
+  }
+}
+
+// ===================================================
+// ส่วนอื่น ๆ เหมือนเดิม
+// ===================================================
+const totalRevenue = salesData.reduce((sum, item) => sum + item.revenue, 0);
+const totalQuantity = salesData.reduce((sum, item) => sum + item.quantity, 0);
+
+const productStats = {};
+salesData.forEach(item => {
+  if (!productStats[item.product]) productStats[item.product] = { quantity: 0, revenue: 0 };
+  productStats[item.product].quantity += item.quantity;
+  productStats[item.product].revenue += item.revenue;
+});
+
+const topProducts = Object.entries(productStats)
+  .sort((a, b) => b[1].revenue - a[1].revenue)
+  .slice(0, 10);
+
+const dailySales = {};
+salesData.forEach(item => {
+  if (!dailySales[item.date]) dailySales[item.date] = 0;
+  dailySales[item.date] += item.revenue;
+});
+const sortedDates = Object.keys(dailySales).sort((a,b) => new Date(a) - new Date(b));
+
+const categoryStats = {};
+salesData.forEach(item => {
+  if (!categoryStats[item.category]) categoryStats[item.category] = 0;
+  categoryStats[item.category] += item.revenue;
+});
+
+const salesSummary = salesData.slice(0, 30).map(item => 
+  `${item.date}: ${item.product} (${item.quantity} ชิ้น, ${item.revenue.toLocaleString()} บาท)`
+).join('\n');
+
+return [{
+  json: {
+    salesData,
+    salesSummary,
+    totalRevenue,
+    totalQuantity,
+    productStats,
+    dataCount: salesData.length,
+    analysisDate: new Date().toISOString().split('T')[0],
+    topProducts,
+    dailySales,
+    sortedDates,
+    categoryStats
+  }
+}];
