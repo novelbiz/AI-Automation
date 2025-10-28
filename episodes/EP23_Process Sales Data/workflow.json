@@ -1,1 +1,318 @@
-
+{
+  "name": "รายงานสรุปยอดขายสินค้า Apple ประจำเดือน",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -1120,
+        -80
+      ],
+      "id": "be60caaf-8b9c-48a1-88cb-0f93532a991e",
+      "name": "Schedule Trigger (8:00 AM)"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1DkT4MRxtGPIIqOuofyAcO5nMaAwn-WREVkHbzdsASyU",
+          "mode": "list",
+          "cachedResultName": "รายงานสรุปยอดขายสินค้า Apple ประจำเดือน",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DkT4MRxtGPIIqOuofyAcO5nMaAwn-WREVkHbzdsASyU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 1437698346,
+          "mode": "list",
+          "cachedResultName": "การตอบแบบฟอร์ม 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1DkT4MRxtGPIIqOuofyAcO5nMaAwn-WREVkHbzdsASyU/edit#gid=1437698346"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -896,
+        -80
+      ],
+      "id": "201d789b-69ec-48bf-aa9c-e7564a2384a9",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "JuO7zv2aoAdcklRn",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===================================================\n// Process Sales Data (แก้ไข timestamp อย่างปลอดภัย)\n// ===================================================\nconst salesData = [];\n\nfor (const item of $input.all()) {\n  const json = item.json;\n\n  if (json['วันที่ขาย'] && json['สินค้า'] && json['ประทับเวลา']) {\n    // แยกวัน เดือน ปี และเวลา\n    const timestampStr = json['ประทับเวลา'].trim(); // \"26/10/2025, 21:46:47\"\n    const [datePart, timePart] = timestampStr.split(',').map(s => s.trim()); // [\"26/10/2025\", \"21:46:47\"]\n    const [day, month, year] = datePart.split('/').map(Number); // [26,10,2025]\n    const [hour, minute, second] = timePart.split(':').map(Number); // [21,46,47]\n\n    // สร้าง Date object อย่างปลอดภัย\n    const isoTimestamp = new Date(year, month - 1, day, hour, minute, second).toISOString();\n\n    salesData.push({\n      date: json['วันที่ขาย'],                 \n      product: json['สินค้า'],\n      quantity: json['จำนวน'] || 0,\n      revenue: json['ยอดขายรวม'] || 0,\n      category: json['หมวดหมู่'] || 'N/A',\n      timestamp: isoTimestamp\n    });\n  }\n}\n\n// ===================================================\n// ส่วนอื่น ๆ เหมือนเดิม\n// ===================================================\nconst totalRevenue = salesData.reduce((sum, item) => sum + item.revenue, 0);\nconst totalQuantity = salesData.reduce((sum, item) => sum + item.quantity, 0);\n\nconst productStats = {};\nsalesData.forEach(item => {\n  if (!productStats[item.product]) productStats[item.product] = { quantity: 0, revenue: 0 };\n  productStats[item.product].quantity += item.quantity;\n  productStats[item.product].revenue += item.revenue;\n});\n\nconst topProducts = Object.entries(productStats)\n  .sort((a, b) => b[1].revenue - a[1].revenue)\n  .slice(0, 10);\n\nconst dailySales = {};\nsalesData.forEach(item => {\n  if (!dailySales[item.date]) dailySales[item.date] = 0;\n  dailySales[item.date] += item.revenue;\n});\nconst sortedDates = Object.keys(dailySales).sort((a,b) => new Date(a) - new Date(b));\n\nconst categoryStats = {};\nsalesData.forEach(item => {\n  if (!categoryStats[item.category]) categoryStats[item.category] = 0;\n  categoryStats[item.category] += item.revenue;\n});\n\nconst salesSummary = salesData.slice(0, 30).map(item => \n  `${item.date}: ${item.product} (${item.quantity} ชิ้น, ${item.revenue.toLocaleString()} บาท)`\n).join('\\n');\n\nreturn [{\n  json: {\n    salesData,\n    salesSummary,\n    totalRevenue,\n    totalQuantity,\n    productStats,\n    dataCount: salesData.length,\n    analysisDate: new Date().toISOString().split('T')[0],\n    topProducts,\n    dailySales,\n    sortedDates,\n    categoryStats\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -688,
+        -80
+      ],
+      "id": "1a94bbca-c724-45ed-ae77-cca7ad596e81",
+      "name": "Process Sales Data1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $input.first().json;\n\nif (!data.topProducts || !data.dailySales || !data.sortedDates || !data.categoryStats) {\n  throw new Error('ข้อมูลไม่ครบ! ตรวจสอบ node \"Process Sales Data\"');\n}\n\n// --- Top Products Bar Chart ---\nconst topProducts = data.topProducts.slice(0,10);\nconst barChartConfig = {\n  type: 'bar',\n  data: {\n    labels: topProducts.map(([name]) => name),\n    datasets: [{\n      label: 'ยอดขาย (บาท)',\n      data: topProducts.map(([, stats]) => stats.revenue),\n      backgroundColor: 'rgba(54, 162, 235, 0.8)',\n      borderColor: 'rgba(54, 162, 235, 1)',\n      borderWidth: 2\n    }]\n  },\n  options: {\n    responsive: true,\n    plugins: { legend: { display: false }, title: { display: true, text: '📊 Top 10 สินค้าขายดี', font:{size:20}, color:'#333' } },\n    layout: { padding: 20 },\n    scales: {\n      y: { beginAtZero: true, ticks:{callback: v=>v.toLocaleString('th-TH')+' ฿'}, grid:{color:'rgba(0,0,0,0.1)'} },\n      x: { ticks:{maxRotation:45,minRotation:45}, grid:{display:false} }\n    }\n  }\n};\n\n// --- Last 14 days Line Chart ---\nconst lastDates = data.sortedDates.slice(-14);\nconst lastSales = lastDates.map(d => data.dailySales[d] || 0);\n\nconst lineChartConfig = {\n  type: 'line',\n  data: { labels:lastDates, datasets:[{\n    label:'ยอดขายรายวัน (บาท)',\n    data:lastSales,\n    fill:true,\n    backgroundColor:'rgba(75,192,192,0.2)',\n    borderColor:'rgba(75,192,192,1)',\n    borderWidth:3,\n    tension:0.4,\n    pointRadius:5,\n    pointBackgroundColor:'rgba(75,192,192,1)',\n    pointBorderColor:'#fff',\n    pointBorderWidth:2,\n    pointHoverRadius:7\n  }]},\n  options:{\n    responsive:true,\n    plugins:{ legend:{display:false}, title:{display:true,text:'📈 แนวโน้มยอดขาย 14 วันล่าสุด', font:{size:20}, color:'#333'}},\n    layout:{padding:20},\n    scales:{ y:{beginAtZero:true,ticks:{callback:v=>v.toLocaleString('th-TH')+' ฿'},grid:{color:'rgba(0,0,0,0.1)'}}, x:{grid:{color:'rgba(0,0,0,0.1)'}} }\n  }\n};\n\n// --- Category Pie Chart ---\nconst pieChartLabels = Object.keys(data.categoryStats);\nconst pieChartData = Object.values(data.categoryStats);\nconst colors = ['rgba(255,99,132,0.8)','rgba(54,162,235,0.8)','rgba(255,206,86,0.8)','rgba(75,192,192,0.8)','rgba(153,102,255,0.8)','rgba(255,159,64,0.8)','rgba(231,233,237,0.8)','rgba(255,99,255,0.8)'];\n\nconst pieChartConfig = {\n  type:'pie',\n  data:{labels:pieChartLabels,datasets:[{data:pieChartData, backgroundColor: colors.slice(0,pieChartLabels.length), borderColor:'#fff', borderWidth:2}]},\n  options:{responsive:true,plugins:{legend:{display:true,position:'right'},title:{display:true,text:'🍰 สัดส่วนยอดขายตามหมวดหมู่',font:{size:20},color:'#333'}},layout:{padding:50}}\n};\n\n// --- Generate URLs ---\nconst baseUrl = 'https://quickchart.io/chart';\nconst width = 800, height = 500;\n\nreturn [{\n  json:{\n    ...data,\n    barChartUrl: `${baseUrl}?width=${width}&height=${height}&backgroundColor=white&c=${encodeURIComponent(JSON.stringify(barChartConfig))}`,\n    lineChartUrl: `${baseUrl}?width=${width}&height=${height}&backgroundColor=white&c=${encodeURIComponent(JSON.stringify(lineChartConfig))}`,\n    pieChartUrl: `${baseUrl}?width=${width}&height=${height}&backgroundColor=white&c=${encodeURIComponent(JSON.stringify(pieChartConfig))}`,\n    chartGenerated:true\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -80
+      ],
+      "id": "ac072a08-d5a4-4611-bad9-b7a33e976a30",
+      "name": "Generate Charts1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=คุณเป็นนักวิเคราะห์ข้อมูลยอดขายมืออาชีพ วิเคราะห์ข้อมูลต่อไปนี้และสรุปเป็นภาษาไทยในรูปแบบรายงานที่กระชับและเข้าใจง่าย:\n\n**📊 ข้อมูลยอดขาย ({{ $json.dataCount }} รายการ)**\n{{ $json.salesSummary }}\n\n**💰 สรุปยอดรวม:**\n- ยอดขายรวม: {{ $json.totalRevenue.toLocaleString('th-TH') }} บาท\n- จำนวนสินค้าที่ขาย: {{ $json.totalQuantity }} ชิ้น\n- จำนวนรายการทั้งหมด: {{ $json.dataCount }} รายการ\n\n**📦 สถิติแต่ละสินค้า:**\n{{ JSON.stringify($json.productStats, null, 2) }}\n\nกรุณาวิเคราะห์และสรุปใน 3 หัวข้อหลัก:\n\n**1. 🏆 Top 3 สินค้าขายดี**\n- เรียงตามยอดรายได้\n- ระบุตัวเลขชัดเจน (จำนวนชิ้น + รายได้)\n- บอกสัดส่วนเปอร์เซ็นต์ของยอดรวม\n\n**2. 👀 โอกาสที่ควรติดตาม**\n- สินค้าที่มีแนวโน้มดีหรือมีศักยภาพเติบโต\n- แนะนำสินค้าที่ควรเพิ่ม stock หรือ promote\n- จุดที่ควรระวังหรือปรับปรุง\n\n**3. 📈 คาดการณ์เดือนหน้า**\n- คาดการณ์แนวโน้มจากข้อมูลที่วิเคราะห์\n- ข้อเสนอแนะเชิงกลยุทธ์\n- เป้าหมายที่ควรตั้งไว้\n\n\nใช้ emoji ให้เหมาะสม เขียนกระชับ ตรงประเด็น เหมาะสำหรับอ่านบนมือถือ\nใช้ข้อความไม่เกิน 2500 ตัวอักษร",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "คุณเป็นผู้เชี่ยวชาญด้านการวิเคราะห์ยอดขายและการทำ business intelligence ที่สามารถให้คำแนะนำเชิงกลยุทธ์ได้อย่างชัดเจนและนำไปปฏิบัติได้จริง"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.7,
+      "position": [
+        -272,
+        -80
+      ],
+      "id": "c90a29fa-96dd-4a2c-b668-94087fbd9e78",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-2.5-pro",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        128
+      ],
+      "id": "9c2e89ba-4fc9-4884-bb91-cc43fd68a2ac",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "FNTLr62FsyBeEYHP",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// ===================================================\n// LINE Message Formatter พร้อมจัดการข้อความ AI\n// ===================================================\n\n// ===================================================\n// ฟังก์ชันตรวจสอบ URL\n// ===================================================\nfunction safeUrl(url) {\n  const dummy = \"https://dummyimage.com/800x500/cccccc/ffffff&text=No+Chart\";\n  if (!url || typeof url !== \"string\") return dummy;\n  const clean = url.trim();\n  if (!/^https?:\\/\\//.test(clean)) return dummy;\n  return clean;\n}\n\n// ===================================================\n// ฟังก์ชันจัดการข้อความ AI\n// ===================================================\nfunction cleanAIText(text) {\n  if (!text || typeof text !== 'string') {\n    return 'ไม่สามารถวิเคราะห์ข้อมูลได้';\n  }\n\n  let cleaned = text;\n\n  // 1. ลบส่วนหัวที่ไม่จำเป็น\n  cleaned = cleaned.replace(/^(ยอดเยี่ยม|แน่นอน)ครับ.*?ในฐานะ(ผู้เชี่ยวชาญ|นักวิเคราะห์).*?ดังนี้ครับ\\n+/s, '');\n  \n  // 2. ลบเส้นคั่น (---)\n  cleaned = cleaned.replace(/\\n*-{3,}\\n*/g, '\\n\\n');\n  \n  // 3. แปลง Markdown Headers (### ) เป็น emoji + ข้อความ\n  cleaned = cleaned.replace(/###\\s*\\*{0,2}(.+?)\\*{0,2}/g, '📌 $1');\n  \n  // 4. ลบ markdown formatting อื่นๆ\n  cleaned = cleaned.replace(/\\*{1,2}(.+?)\\*{1,2}/g, '$1'); // **bold** หรือ *italic*\n  cleaned = cleaned.replace(/\\*/g, ''); // ลบ * ที่เหลือทั้งหมด\n  cleaned = cleaned.replace(/_{1,2}(.+?)_{1,2}/g, '$1'); // __bold__ หรือ _italic_\n  \n  // 5. แปลง bullet points\n  cleaned = cleaned.replace(/^\\* /gm, '• ');\n  cleaned = cleaned.replace(/^- /gm, '• ');\n  \n  // 6. ลบช่องว่างหลาย line ซ้อน\n  cleaned = cleaned.replace(/\\n{3,}/g, '\\n\\n');\n  \n  // 7. ตัดช่องว่างหน้า-หลัง\n  cleaned = cleaned.trim();\n  \n  // 8. จำกัดความยาว (LINE Flex Message รองรับได้ประมาณ 3000 ตัวอักษร)\n  // ถ้ายาวเกินไป ตัดให้เหลือ 2500 ตัวอักษร\n  if (cleaned.length > 2500) {\n    cleaned = cleaned.substring(0, 2500) + '...\\n\\n📊 [ข้อความถูกตัดทอน - ดูรายงานเต็มใน Google Sheets]';\n  }\n  \n  return cleaned;\n}\n\n// ===================================================\n// ฟังก์ชันสกัดข้อมูลสำคัญจาก AI (ทางเลือก - กระชับกว่า)\n// ===================================================\nfunction extractKeyInsights(text) {\n  if (!text || typeof text !== 'string') {\n    return 'ไม่สามารถวิเคราะห์ข้อมูลได้';\n  }\n\n  const insights = [];\n  \n  // หา Top 3 Products\n  const top3Match = text.match(/🥇\\s*\\*{0,2}1\\.\\s*(.+?)\\*{0,2}\\s*\\n.*?รายได้:\\*{0,2}\\s*([\\d,]+)\\s*บาท/s);\n  if (top3Match) {\n    insights.push(`🥇 สินค้าขายดีที่สุด: ${top3Match[1]}`);\n    insights.push(`💰 รายได้: ${top3Match[2]} บาท`);\n  }\n  \n  // หาโอกาส\n  const opportunityMatch = text.match(/สินค้าดาวรุ่ง.*?:.*?\\*{0,2}(.+?)\\*{0,2}:/s);\n  if (opportunityMatch) {\n    insights.push(`\\n✨ โอกาส: ${opportunityMatch[1]}`);\n  }\n  \n  // หาคำแนะนำ\n  const recommendMatch = text.match(/ข้อเสนอแนะเชิงกลยุทธ์.*?\\n\\n(.*?)(?:\\n\\n\\*{0,2}💰|$)/s);\n  if (recommendMatch) {\n    let recommendations = recommendMatch[1];\n    // ตัด numbering และปรับให้กระชับ\n    recommendations = recommendations.replace(/\\d+\\.\\s*\\*{0,2}(.+?):\\*{0,2}\\s*/g, '• $1: ');\n    recommendations = recommendations.replace(/\\n/g, ' ').substring(0, 300);\n    insights.push(`\\n💡 คำแนะนำ:\\n${recommendations}...`);\n  }\n  \n  return insights.join('\\n');\n}\n\n// 🧩 ดึงข้อมูลจาก Node ต่าง ๆ\nconst aiNode = $input.first().json;\nconst chartNode = $('Generate Charts1').first().json;\nconst processNode = $('Process Sales Data1').first().json;\n\n// 📊 ข้อมูลหลัก\nconst aiRawText = aiNode.text || aiNode.output || 'ไม่สามารถวิเคราะห์ข้อมูลได้';\nconst totalRevenue = processNode.totalRevenue || 0;\nconst totalQuantity = processNode.totalQuantity || 0;\nconst topProducts = processNode.topProducts || [];\n\n// ✅ จัดการข้อความ AI (เลือก 1 ใน 2 วิธี)\n// วิธีที่ 1: ทำความสะอาดข้อความเต็ม (แนะนำ)\nconst aiResponse = cleanAIText(aiRawText);\n\n// วิธีที่ 2: สกัดเฉพาะประเด็นสำคัญ (กระชับกว่า)\n// const aiResponse = extractKeyInsights(aiRawText);\n\n// 🔍 Debug: แสดงข้อความ AI ที่ผ่านการจัดการแล้ว\nconsole.log(\"🤖 AI Response (cleaned):\", aiResponse.substring(0, 200) + \"...\");\nconsole.log(\"📏 Length:\", aiResponse.length);\n\n// ✅ ดึง URL จาก Generate Charts1\nconst barChartUrl = safeUrl(chartNode.barChartUrl || \"https://dummyimage.com/800x500/cccccc/ffffff&text=No+Bar+Chart\");\nconst lineChartUrl = safeUrl(chartNode.lineChartUrl || \"https://dummyimage.com/800x500/cccccc/ffffff&text=No+Line+Chart\");\nconst pieChartUrl = safeUrl(chartNode.pieChartUrl || \"https://dummyimage.com/800x500/cccccc/ffffff&text=No+Pie+Chart\");\n\n// 🖼️ URL ของกราฟ (เลือกอันเดียวสำหรับ Flex Message)\nlet chartUrl = safeUrl(chartNode.barChartUrl || chartNode.lineChartUrl || chartNode.pieChartUrl);\n\n// 📋 URL สำหรับลิงก์หลัก\nlet sheetUrl = safeUrl(\"https://docs.google.com/spreadsheets/d/1T4TUZWwVJ36RHKG4gHrbaLh6OVSHIGaP9qneuderuT8\");\n\n// 📅 วันที่\nconst analysisDate = new Date().toLocaleString('th-TH', {\n  year: 'numeric',\n  month: 'long',\n  day: 'numeric',\n  hour: '2-digit',\n  minute: '2-digit',\n  hour12: false\n});\n\n// ===================================================\n// 💳 1️⃣ Summary Card\n// ===================================================\nconst summaryCard = {\n  type: \"flex\",\n  altText: \"📊 รายงานยอดขายประจำวัน\",\n  contents: {\n    type: \"bubble\",\n    size: \"mega\",\n    hero: {\n      type: \"box\",\n      layout: \"vertical\",\n      contents: [\n        { \n          type: \"text\", \n          text: \"📊 รายงานยอดขาย\", \n          size: \"xxl\", \n          weight: \"bold\", \n          color: \"#FFFFFF\", \n          align: \"center\" \n        },\n        { \n          type: \"text\", \n          text: analysisDate, \n          size: \"sm\", \n          color: \"#FFFFFF\", \n          align: \"center\", \n          margin: \"md\", \n          wrap: true \n        }\n      ],\n      backgroundColor: \"#3B82F6\",\n      paddingAll: \"25px\",\n      spacing: \"md\"\n    },\n    body: {\n      type: \"box\",\n      layout: \"vertical\",\n      contents: [\n        {\n          type: \"box\",\n          layout: \"horizontal\",\n          contents: [\n            { type: \"text\", text: \"💰\", size: \"xl\", flex: 0 },\n            {\n              type: \"box\",\n              layout: \"vertical\",\n              contents: [\n                { \n                  type: \"text\", \n                  text: \"ยอดขายรวม\", \n                  size: \"sm\", \n                  color: \"#666666\", \n                  weight: \"bold\" \n                },\n                { \n                  type: \"text\", \n                  text: `${totalRevenue.toLocaleString('th-TH')} บาท`, \n                  size: \"xl\", \n                  color: \"#10B981\", \n                  weight: \"bold\", \n                  margin: \"xs\" \n                }\n              ],\n              margin: \"md\"\n            }\n          ],\n          backgroundColor: \"#F0FDF4\",\n          cornerRadius: \"md\",\n          paddingAll: \"15px\"\n        },\n        {\n          type: \"box\",\n          layout: \"horizontal\",\n          contents: [\n            { \n              type: \"text\", \n              text: \"📦 จำนวนสินค้า\", \n              size: \"md\", \n              color: \"#666666\", \n              flex: 0 \n            },\n            { \n              type: \"text\", \n              text: `${totalQuantity.toLocaleString('th-TH')} ชิ้น`, \n              size: \"md\", \n              color: \"#3B82F6\", \n              weight: \"bold\", \n              align: \"end\" \n            }\n          ],\n          margin: \"xl\",\n          paddingAll: \"10px\"\n        },\n        { \n          type: \"separator\", \n          margin: \"xl\", \n          color: \"#E5E7EB\" \n        },\n        { \n          type: \"text\", \n          text: \"🏆 Top 3 สินค้าขายดี\", \n          size: \"lg\", \n          weight: \"bold\", \n          color: \"#1F2937\", \n          margin: \"xl\" \n        }\n      ],\n      paddingAll: \"20px\"\n    },\n    footer: {\n      type: \"box\",\n      layout: \"vertical\",\n      contents: [\n        {\n          type: \"button\",\n          style: \"primary\",\n          height: \"sm\",\n          action: { \n            type: \"uri\", \n            label: \"📊 ดูรายงานเต็มใน Google Sheets\", \n            uri: sheetUrl \n          },\n          color: \"#2563EB\"\n        },\n        { \n          type: \"text\", \n          text: \"ดูกราฟด้านล่าง 👇\", \n          size: \"sm\", \n          color: \"#6B7280\", \n          align: \"center\", \n          weight: \"bold\", \n          margin: \"md\" \n        }\n      ],\n      paddingAll: \"15px\",\n      backgroundColor: \"#F9FAFB\"\n    }\n  }\n};\n\n// เพิ่ม Top 3\nif (topProducts.length > 0) {\n  topProducts.slice(0, 3).forEach((product, index) => {\n    const [name, stats] = product;\n    const medal = [\"🥇\", \"🥈\", \"🥉\"][index] || \"⭐\";\n    const bgColor = [\"#FEF3C7\", \"#E0E7FF\", \"#FFEDD5\"][index] || \"#FFFFFF\";\n\n    summaryCard.contents.body.contents.push({\n      type: \"box\",\n      layout: \"horizontal\",\n      contents: [\n        { type: \"text\", text: medal, size: \"xl\", flex: 0 },\n        {\n          type: \"box\",\n          layout: \"vertical\",\n          contents: [\n            { \n              type: \"text\", \n              text: name, \n              size: \"md\", \n              color: \"#1F2937\", \n              weight: \"bold\", \n              wrap: true \n            },\n            { \n              type: \"text\", \n              text: `${stats.quantity} ชิ้น | ${stats.revenue.toLocaleString('th-TH')} บาท`, \n              size: \"sm\", \n              color: \"#059669\", \n              margin: \"xs\", \n              weight: \"bold\" \n            }\n          ],\n          margin: \"md\"\n        }\n      ],\n      margin: \"md\",\n      backgroundColor: bgColor,\n      cornerRadius: \"md\",\n      paddingAll: \"12px\"\n    });\n  });\n}\n\n// ===================================================\n// 🤖 AI Analysis Bubble\n// ===================================================\nconst aiAnalysisBubble = {\n  type: \"flex\",\n  altText: \"🤖 การวิเคราะห์\",\n  contents: {\n    type: \"bubble\",\n    size: \"mega\",\n    header: {\n      type: \"box\",\n      layout: \"horizontal\",\n      contents: [\n        { type: \"text\", text: \"🤖\", size: \"xl\", flex: 0 },\n        { \n          type: \"text\", \n          text: \"การวิเคราะห์\", \n          weight: \"bold\", \n          size: \"lg\", \n          color: \"#FFFFFF\", \n          margin: \"md\" \n        }\n      ],\n      paddingAll: \"20px\",\n      backgroundColor: \"#8B5CF6\"\n    },\n    body: { \n      type: \"box\", \n      layout: \"vertical\", \n      contents: [\n        { \n          type: \"text\", \n          text: aiResponse, \n          wrap: true, \n          size: \"sm\", \n          color: \"#1F2937\" \n        }\n      ], \n      paddingAll: \"20px\" \n    },\n    footer: {\n      type: \"box\",\n      layout: \"horizontal\",\n      contents: [\n        { \n          type: \"text\", \n          text: \"✅ รายงานสมบูรณ์\", \n          size: \"sm\", \n          color: \"#10B981\", \n          weight: \"bold\" \n        },\n        { \n          type: \"text\", \n          text: new Date().toLocaleTimeString('th-TH'), \n          size: \"xs\", \n          color: \"#6B7280\", \n          align: \"end\" \n        }\n      ],\n      paddingAll: \"15px\"\n    }\n  }\n};\n\n// ===================================================\n// ✅ ส่งกลับ LINE\n// ===================================================\nreturn [{\n  json: {\n    to: \"U938a9be63e7f733655278aade4600a8a\",\n    messages: [\n      summaryCard,\n      { \n        type: \"image\", \n        originalContentUrl: barChartUrl, \n        previewImageUrl: barChartUrl \n      },\n      { \n        type: \"image\", \n        originalContentUrl: lineChartUrl, \n        previewImageUrl: lineChartUrl \n      },\n      { \n        type: \"image\", \n        originalContentUrl: pieChartUrl, \n        previewImageUrl: pieChartUrl \n      },\n      aiAnalysisBubble\n    ]\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -80
+      ],
+      "id": "b084ee55-7a09-4602-ade9-e2511808d998",
+      "name": "Format LINE Message"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.line.me/v2/bot/message/push",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Authorization",
+              "value": "Bearer   uB7COayFFVYMtU+uoGmoUfT5BVpGdKF+HAZsvrbu7sgk4D66Qenxlm1URFgVA2589/jBkx0coJtbXSiH47Oelp5FYoCpdCEPywpdBfNm2QGq0p/ePTJCFBPlXiRBqS4WRTCx1JHnu/dDzH5Yy24x3wdB04t89/1O/w1cDnyilFU="
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        352,
+        -80
+      ],
+      "id": "448fb71f-ec78-4127-8fd8-81281d3b2596",
+      "name": "Send via LINE Messaging API1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับข้อมูลจาก LLM Analysis\nconst previousData = $input.first().json;\nlet aiAnalysis = previousData.output || previousData.response || previousData.text || 'ไม่มีการวิเคราะห์';\n\n// ลบ # และ * และ --- ออก\naiAnalysis = aiAnalysis.replace(/[#*]/g, '').replace(/---+/g, '');\n\n// แปลงข้อความให้สวยงามด้วย HTML\n// แยกเป็นย่อหน้าและเพิ่ม styling\nconst formattedAnalysis = aiAnalysis\n  .split('\\n\\n')\n  .map(paragraph => {\n    // ถ้าเป็นหัวข้อที่มี emoji หรือตัวเลข\n    if (/^[🏆👀📈🔍💡📊]\\s/.test(paragraph) || /^\\d+\\.\\s/.test(paragraph)) {\n      return `<div class=\"analysis-highlight\">${paragraph}</div>`;\n    }\n    // ย่อหน้าปกติ\n    return `<p>${paragraph}</p>`;\n  })\n  .join('');\n\n// ดึงข้อมูลจาก node Generate Charts\nconst chartData = $('Generate Charts1').first().json;\n\n// สร้าง HTML Email สวยงาม\nconst htmlContent = `\n<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <style>\n    body {\n      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;\n      line-height: 1.6;\n      color: #333;\n      max-width: 100%;\n      margin: 0 auto;\n      padding: 10px;\n      background-color: #f4f4f4;\n    }\n    .container {\n      background-color: white;\n      border-radius: 10px;\n      padding: 35px;\n      box-shadow: 0 2px 10px rgba(0,0,0,0.1);\n      max-width: 1000px;\n      margin: 0 auto;\n    }\n    .header {\n      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);\n      color: white;\n      padding: 35px;\n      border-radius: 10px 10px 0 0;\n      margin: -35px -35px 35px -35px;\n      text-align: center;\n    }\n    .header h1 {\n      margin: 0;\n      font-size: 32px;\n    }\n    .summary-box {\n      background-color: #f8f9fa;\n      border-left: 4px solid #667eea;\n      padding: 30px;\n      margin: 30px 0;\n      border-radius: 5px;\n      display: flex;\n      justify-content: space-around;\n      flex-wrap: wrap;\n    }\n    .summary-item {\n      text-align: center;\n      margin: 15px 30px;\n      font-size: 18px;\n      min-width: 200px;\n    }\n    .summary-label {\n      color: #666;\n      font-weight: 500;\n      font-size: 16px;\n      margin-bottom: 10px;\n    }\n    .summary-value {\n      color: #667eea;\n      font-weight: bold;\n      font-size: 28px;\n    }\n    .analysis-section {\n      margin: 40px 0;\n      line-height: 1.8;\n      font-size: 16px;\n    }\n    .analysis-content {\n      background: linear-gradient(135deg, #f5f7fa 0%, #e8eef5 100%);\n      border-radius: 12px;\n      padding: 35px;\n      box-shadow: 0 3px 15px rgba(0,0,0,0.08);\n      border: 1px solid rgba(102, 126, 234, 0.1);\n    }\n    .analysis-content p {\n      margin: 15px 0;\n      color: #444;\n      line-height: 1.9;\n    }\n    .analysis-highlight {\n      background: linear-gradient(135deg, #ffffff 0%, #f0f4ff 100%);\n      border-left: 5px solid #667eea;\n      padding: 20px 25px;\n      margin: 25px 0;\n      border-radius: 8px;\n      box-shadow: 0 2px 8px rgba(0,0,0,0.05);\n      font-weight: 500;\n      color: #333;\n      line-height: 1.9;\n    }\n    .analysis-highlight:hover {\n      transform: translateX(5px);\n      transition: transform 0.3s ease;\n    }\n    .chart-container {\n      text-align: center;\n      margin: 40px 0;\n    }\n    .chart-row {\n      display: flex;\n      justify-content: space-between;\n      gap: 20px;\n      margin: 30px 0;\n      flex-wrap: wrap;\n    }\n    .chart-item {\n      flex: 1;\n      min-width: 45%;\n    }\n    .chart-item-full {\n      width: 100%;\n    }\n    .chart-container img {\n      max-width: 100%;\n      width: 100%;\n      height: auto;\n      border-radius: 8px;\n      box-shadow: 0 4px 6px rgba(0,0,0,0.1);\n      margin: 10px 0;\n    }\n    .chart-title {\n      font-size: 20px;\n      font-weight: 600;\n      color: #444;\n      margin: 20px 0 15px 0;\n      text-align: center;\n    }\n    .footer {\n      text-align: center;\n      margin-top: 50px;\n      padding-top: 30px;\n      border-top: 2px solid #eee;\n      color: #666;\n      font-size: 14px;\n    }\n    \n    /* Responsive design */\n    @media (max-width: 768px) {\n      .container {\n        padding: 20px;\n      }\n      .header {\n        padding: 20px;\n        margin: -20px -20px 20px -20px;\n      }\n      .header h1 {\n        font-size: 24px;\n      }\n      .summary-box {\n        flex-direction: column;\n      }\n      .summary-item {\n        margin: 10px 0;\n      }\n      .chart-row {\n        flex-direction: column;\n      }\n      .chart-item {\n        min-width: 100%;\n      }\n      .analysis-content {\n        padding: 20px;\n      }\n      .analysis-highlight {\n        padding: 15px 20px;\n      }\n    }\n  </style>\n</head>\n<body>\n  <div class=\"container\">\n    <div class=\"header\">\n      <h1>📊 รายงานยอดขายสินค้า Apple</h1>\n      <p style=\"margin: 10px 0 0 0; font-size: 18px;\">ประจำวันที่ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}</p>\n    </div>\n    \n    <div class=\"summary-box\">\n      <div class=\"summary-item\">\n        <div class=\"summary-label\">💰 ยอดขายรวม</div>\n        <div class=\"summary-value\">${chartData.totalRevenue.toLocaleString('th-TH')} ฿</div>\n      </div>\n      <div class=\"summary-item\">\n        <div class=\"summary-label\">📦 จำนวนสินค้า</div>\n        <div class=\"summary-value\">${chartData.totalQuantity} ชิ้น</div>\n      </div>\n      <div class=\"summary-item\">\n        <div class=\"summary-label\">📋 รายการทั้งหมด</div>\n        <div class=\"summary-value\">${chartData.dataCount} รายการ</div>\n      </div>\n    </div>\n    \n    <div class=\"analysis-section\">\n      <h2 style=\"color: #667eea; font-size: 24px; margin-bottom: 20px;\">🔍 วิเคราะห์ข้อมูล</h2>\n      <div class=\"analysis-content\">\n        ${formattedAnalysis}\n      </div>\n    </div>\n    \n    <div class=\"chart-container\">\n      <h2 style=\"color: #667eea; font-size: 24px; margin-bottom: 30px;\">📈 กราฟและสถิติ</h2>\n      \n      <div class=\"chart-item-full\">\n        <div class=\"chart-title\"> Top 10 สินค้าขายดี</div>\n        <img src=\"${chartData.barChartUrl}\" alt=\"Bar Chart\">\n      </div>\n      \n      <div class=\"chart-row\">\n        <div class=\"chart-item\">\n          <div class=\"chart-title\"> แนวโน้มยอดขาย 30 วันล่าสุด</div>\n          <img src=\"${chartData.lineChartUrl}\" alt=\"Line Chart\">\n        </div>\n        \n        <div class=\"chart-item\">\n          <div class=\"chart-title\"> สัดส่วนยอดขายตามหมวดหมู่</div>\n          <img src=\"${chartData.pieChartUrl}\" alt=\"Pie Chart\">\n        </div>\n      </div>\n    </div>\n    \n    <div class=\"footer\">\n      <p>รายงานนี้สร้างโดยระบบอัตโนมัติ | สร้างเมื่อ ${new Date().toLocaleString('th-TH')}</p>\n      <p>📊 Powered by n8n Automation</p>\n    </div>\n  </div>\n</body>\n</html>\n`;\n\n// สร้าง plain text version สำหรับ email client ที่ไม่รองรับ HTML\nconst textContent = `\n📊 รายงานยอดขายสินค้า Apple\nประจำวันที่ ${new Date().toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' })}\n\n💰 สรุปภาพรวม\n- ยอดขายรวม: ${chartData.totalRevenue.toLocaleString('th-TH')} บาท\n- จำนวนสินค้า: ${chartData.totalQuantity} ชิ้น\n- รายการทั้งหมด: ${chartData.dataCount} รายการ\n\n🔍 การวิเคราะห์จาก AI\n${aiAnalysis}\n\n📊 กราฟและข้อมูลเพิ่มเติม\n- Top 10 สินค้าขายดี: ${chartData.barChartUrl}\n- แนวโน้มยอดขาย 30 วัน: ${chartData.lineChartUrl}\n- สัดส่วนยอดขายตามหมวดหมู่: ${chartData.pieChartUrl}\n\nรายงานนี้สร้างโดยระบบอัตโนมัติ | สร้างเมื่อ ${new Date().toLocaleString('th-TH')}\n`;\n\nreturn {\n  json: {\n    htmlContent,\n    textContent,\n    subject: `📊 รายงานยอดขาย Apple - ${new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: 'numeric' })}`,\n    chartData\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        128
+      ],
+      "id": "cc547aaf-4751-4a64-a835-1c2bc77e6c9e",
+      "name": "Format Email Message"
+    },
+    {
+      "parameters": {
+        "sendTo": "prasertkhajusrokar@gmail.com",
+        "subject": "={{ $json.subject }}",
+        "message": "={{ $json.htmlContent }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        368,
+        128
+      ],
+      "id": "d7c03044-8a84-436a-bb42-55f3627acb71",
+      "name": "Send a message",
+      "webhookId": "3b21dc64-6b79-48c2-a0d1-3f60791b5c66",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "HbRQKRDJEPtML18H",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger (8:00 AM)": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Process Sales Data1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Process Sales Data1": {
+      "main": [
+        [
+          {
+            "node": "Generate Charts1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Charts1": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Format Email Message",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Format LINE Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format LINE Message": {
+      "main": [
+        [
+          {
+            "node": "Send via LINE Messaging API1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Email Message": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send via LINE Messaging API1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "10c6ea35-e35d-4e60-9b4c-b49dfa24f500",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "b0fdbd353b3d60f56600de4b356895824c257be7a727c065cd1e7a122c4e9aff"
+  },
+  "id": "ibycslbaTyXis1PY",
+  "tags": []
+}
