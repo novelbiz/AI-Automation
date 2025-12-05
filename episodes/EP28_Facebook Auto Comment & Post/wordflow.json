@@ -1,1 +1,831 @@
 
+{
+  "name": "comment facebook1",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1280, 272],
+      "id": "6b11d46d-b167-4c45-b56c-0cb2d8655545",
+      "name": "Schedule Trigger1"
+    },
+    {
+      "parameters": {
+        "graphApiVersion": "v23.0",
+        "node": "YOUR_FACEBOOK_PAGE_ID",
+        "edge": "posts",
+        "options": {
+          "queryParameters": {
+            "parameter": [{}]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [-944, 272],
+      "id": "e78e42e2-4991-4933-8f1f-e7f0bc37093c",
+      "name": "Facebook Graph API1",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_FACEBOOK_CREDENTIAL_ID",
+          "name": "Facebook Graph account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "465ecc30-5b65-46ae-9414-195651dba251",
+              "name": "data[0].id",
+              "value": "={{ $json.data[0].id }}",
+              "type": "string"
+            },
+            {
+              "id": "82d2e6aa-5947-427f-82d6-732291977ce0",
+              "name": "data[0].message",
+              "value": "={{ $json.data[0].message }}",
+              "type": "string"
+            },
+            {
+              "id": "1d8c1bbe-6c69-46b5-986c-58296e3c1cb8",
+              "name": "data[0].created_time",
+              "value": "={{ $json.data[0].created_time }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-736, 272],
+      "id": "d49e45ab-2d81-4559-bc91-4f9a4df14b88",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "graphApiVersion": "v23.0",
+        "node": "={{ $json.data[0].id }}",
+        "edge": "comments",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "limit",
+                "value": "10"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [-544, 272],
+      "id": "4cea41bf-7658-4267-afe5-32916ffc019d",
+      "name": "Facebook Graph API2",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_FACEBOOK_CREDENTIAL_ID",
+          "name": "Facebook Graph account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "data",
+        "include": "selectedOtherFields",
+        "fieldsToInclude": "data",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [-336, 272],
+      "id": "f506f771-9f1b-40d9-ba1c-c3c5a354dfa1",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=คุณทำหน้าที่เป็นผู้ช่วยชาย คอยตอบคอมเมนต์ใน Facebook ของ เที่ยวเขา\nคุณต้องตอบลูกค้าอย่างสุภาพ อ่านง่าย เป็นกันเอง ไม่ใช้คำหยาบ และให้ข้อมูลที่ถูกต้องที่สุด\nคุณต้องตอบกลับ คอมเมนต์เดียว แบบกระชับ แต่ยังให้ความรู้สึกเอาใจใส่\n\nกฎการตอบ:\n\nถ้าลูกค้าถามข้อมูล → ตอบให้ครบ ชัดเจน และชวนทัก Inbox ถ้าต้องการข้อมูลเฉพาะ\n\nถ้าลูกค้าชม → ขอบคุณอย่างจริงใจ พร้อมเชิญชวนให้ใช้บริการหรือกลับมาอีก\n\nถ้าลูกค้าบ่น/ตำหนิ → ขอโทษด้วยความจริงใจ และชวนให้ส่งรายละเอียดใน Inbox เพื่อช่วยแก้ไข\n\nถ้าคอมเมนต์กำกวม → ตอบด้วยความสุภาพและขอข้อมูลเพิ่ม\n\nห้ามใช้ emoji เกิน 2 ตัว\n\nห้ามตอบหลายข้อความ ต้องให้ คำตอบเดียวเท่านั้น\n\nตัวอย่าง Input ที่คุณจะได้รับคือ: “{{ $json.latest_item.message }}”\n\nคุณต้องส่งออกเฉพาะ ข้อความตอบลูกค้า ไม่ต้องอธิบายเพิ่ม\n\nให้คุณตอบกลับคอมเมนต์นี้ด้วยน้ำเสียงเหมาะสมที่สุดตามหลักด้านบน โดยให้ตอบเพียงคำตอบเดียวเท่านั้น",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [-496, 496],
+      "id": "274259c4-3c23-4123-8435-4e4a9f7d91d6",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [-544, 736],
+      "id": "521311c8-f364-4c09-bf0a-7c1319202aa5",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "YOUR_GOOGLE_GEMINI_CREDENTIAL_ID",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "={{ $('Code in JavaScript').item.json.latest_item.id }}",
+        "edge": "comments",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $('AI Agent').item.json.output }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [-192, 496],
+      "id": "115cc938-013e-451a-aa54-d1293ed21190",
+      "name": "Facebook Graph API3",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_FACEBOOK_CREDENTIAL_ID",
+          "name": "Facebook Graph account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Code in JavaScript').item.json.latest_item.id }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [-368, 736],
+      "id": "10fbdebb-852a-49d2-9cc4-54b86aec5bdc",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับข้อมูลเข้ามาจาก previous node\nconst items = $input.all();\n\n// โครงสร้างข้อมูล JSON ที่ส่งเข้ามา\nconst dataList = items[0].json.data;\n\n// แปลงเป็น Date แล้วหาอันที่ใหม่ที่สุด\nconst latest = dataList.reduce((a, b) => {\n  return new Date(a.created_time) > new Date(b.created_time) ? a : b;\n});\n\n// ส่งออกเฉพาะวันที่ล่าสุด (หรือข้อมูลทั้ง object ก็ได้)\nreturn [\n  {\n    json: {\n      latest_date: latest.created_time,\n      latest_item: latest\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [16, 272],
+      "id": "72ee30ff-d7b4-4785-8d0f-6432fb9abd68",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "รูปสำหรับ post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 354221281,
+          "mode": "list",
+          "cachedResultName": "ชีต2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=354221281"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id_post": "={{ $('Code in JavaScript').item.json.latest_item.from.id }}",
+            "id_comment": "={{ $('Code in JavaScript').item.json.latest_item.id }}",
+            "timestame": "={{ $('Code in JavaScript').item.json.latest_item.created_time }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "id_post",
+              "displayName": "id_post",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "id_comment",
+              "displayName": "id_comment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "timestame",
+              "displayName": "timestame",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [16, 496],
+      "id": "2de04c94-9a1e-420a-8a36-35e0b45c14b1",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "eae5ffb6-dd9c-40a3-98d5-43949c18c268",
+              "leftValue": "={{ $json.is_duplicate }}",
+              "rightValue": "=false",
+              "operator": {
+                "type": "boolean",
+                "operation": "false",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [-768, 512],
+      "id": "62522d6e-fdf1-40aa-997b-b79b1a35752a",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "รูปสำหรับ post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": 354221281,
+          "mode": "list",
+          "cachedResultName": "ชีต2",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=354221281"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-1280, 528],
+      "id": "474d9091-15da-4710-b694-4511a0dfdbb0",
+      "name": "Get row(s) in sheet1",
+      "retryOnFail": true,
+      "notesInFlow": false,
+      "executeOnce": false,
+      "alwaysOutputData": true,
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "notes": "notdata"
+    },
+    {
+      "parameters": {
+        "jsCode": "// รับข้อมูลทั้งหมดจากโหนดก่อนหน้า (Get row(s) in sheet1)\nconst sheetItems = $input.all();\n\n// ID คอมเมนต์ล่าสุดจาก Facebook (จาก Code in JavaScript Node ตัวแรก)\nconst latestCommentId = $('Code in JavaScript').item.json.latest_item.id;\n\n// ดึง Array ของ ID คอมเมนต์ทั้งหมดจากทุก Item ที่มาจาก Google Sheet\n// โดยใช้ .map() บนตัวแปร sheetItems (ซึ่งเป็น Array ของ Items)\n// และเข้าถึง .json.id_comment ของแต่ละ Item\nconst allCommentIds = sheetItems.map(item => item.json.id_comment);\n\n// ตรวจสอบว่า ID คอมเมนต์ล่าสุด มีอยู่ใน Array ของ ID เก่าแล้วหรือไม่\n// โดยใช้ .some() บน Array ที่เป็นผลลัพธ์จาก .map\nconst isDuplicate = allCommentIds.some(id => id === latestCommentId);\n\n// ส่งผลลัพธ์ออกไป\nreturn [\n  {\n    json: {\n      is_duplicate: isDuplicate\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [-960, 512],
+      "id": "78069bea-45aa-4b0d-8d8d-9d53f0bff370",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_GOOGLE_SHEETS_DOCUMENT_ID",
+          "mode": "list",
+          "cachedResultName": "รูปสำหรับ post",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "ชีต1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_GOOGLE_SHEETS_DOCUMENT_ID/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "วันที่",
+              "lookupValue": "={{ new Date().toLocaleDateString('th-TH') }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [-944, -160],
+      "id": "7a79a082-2029-4815-bebe-71f49ec66704",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_GOOGLE_SHEETS_CREDENTIAL_ID",
+          "name": "Google Sheets account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "queryString": "={{ $json['ชื่อรูป'] }}",
+        "limit": 1,
+        "filter": {
+          "folderId": {
+            "__rl": true,
+            "value": "1U_q2egTzc3eqgXcdxBln20DmH3qJLTrW",
+            "mode": "list",
+            "cachedResultName": "n8n_upload",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1U_q2egTzc3eqgXcdxBln20DmH3qJLTrW"
+          }
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-752, -160],
+      "id": "4f437272-b916-461f-939a-5539616821f0",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fe9DTRLN0yqFrKtj",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-560, -160],
+      "id": "8d9529bd-a033-4f79-97f7-0cb61b93d636",
+      "name": "Download file",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fe9DTRLN0yqFrKtj",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [-352, -160],
+      "id": "21962cd6-4916-41b3-8819-79db7b77717a",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "key",
+              "value": "AIzaSyBZPVdTOOWmPrQ22-buJJnDvrxpJeUrSBk"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"contents\": [\n    {\n      \"parts\": [\n        {\n          \"text\": \"ให้เขียนข้อความสำหรับโพสต์บน Facebook จำนวน 1 คำตอบเท่านั้น ประกอบด้วย Caption และเนื้อหาโพสต์รวมอยู่ด้วยกันในบล็อกเดียว ห้ามตอบเกินหนึ่งชุด ห้ามมีคำเกริ่นนำ เช่น “แน่นอนค่ะ”, “นี่คือ”, “ตัวอย่าง”, หรือคำอธิบายอื่นใด ให้ตอบเฉพาะข้อความที่ใช้โพสต์เท่านั้น เนื้อหาต้องเป็นมิตร อ่านง่าย ให้บรรยากาศสดใส และมีอารมณ์เชิญชวนเล็กน้อย พร้อมใส่อีโมจิอย่างพอดีและเพิ่มแฮชแท็กท้ายโพสต์ให้เหมาะสมกับสินค้า/บริการของฉันด้วย\"\n        },\n        {\n          \"inline_data\": {\n            \"mime_type\": \"image/jpeg\",\n            \"data\": \"{{ $json.data }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [0, -160],
+      "id": "e198d686-209e-4070-8b43-206883cb9228",
+      "name": "gemini image to caption"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "={{ $('Search files and folders').item.json.id }}",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [-944, 64],
+      "id": "ba72a8a1-07c5-4bfb-8a3e-9f269483aa80",
+      "name": "Download file1",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "fe9DTRLN0yqFrKtj",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "binaryToPropery",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [-752, 64],
+      "id": "d3b48e02-bd2a-4913-bf82-ed605fe4f356",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "data",
+        "options": {
+          "fileName": "to_face"
+        }
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [-560, 64],
+      "id": "7d40c680-72cc-472b-b854-be639693013f",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v23.0",
+        "node": "YOUR_FACEBOOK_PAGE_ID",
+        "edge": "photos",
+        "sendBinaryData": true,
+        "binaryPropertyName": "data",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {
+                "name": "message",
+                "value": "={{ $('gemini image to caption').item.json.candidates[0].content.parts[0].text }}"
+              }
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [-352, 64],
+      "id": "5c04cdf5-0394-4e85-9ada-1fb3da3dc70e",
+      "name": "Facebook Graph API",
+      "credentials": {
+        "facebookGraphApi": {
+          "id": "YOUR_FACEBOOK_CREDENTIAL_ID",
+          "name": "Facebook Graph account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-1280, -160],
+      "id": "00c5d57a-158f-4b8d-8405-6fa9f6cf3503",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger1": {
+      "main": [
+        [
+          {
+            "node": "Facebook Graph API1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Graph API1": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Facebook Graph API2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Graph API2": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Facebook Graph API3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [[]]
+    },
+    "Get row(s) in sheet1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Facebook Graph API3": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Download file",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "gemini image to caption",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "gemini image to caption": {
+      "main": [
+        [
+          {
+            "node": "Download file1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download file1": {
+      "main": [
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Facebook Graph API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "YOUR_VERSION_ID",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "YOUR_N8N_INSTANCE_ID"
+  },
+  "id": "YOUR_WORKFLOW_ID",
+  "tags": []
+}
